@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://tempuri.org/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" targetNamespace="http://tempuri.org/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://tempuri.org/">
+      <s:element name="GroupPoolGetPhotos">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GroupId" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="perPage" type="s:int" />
+            <s:element minOccurs="1" maxOccurs="1" name="Page" type="s:int" />
+
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GroupPoolGetPhotosResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GroupPoolGetPhotosResult" type="tns:FlickrLightRequest" />
+          </s:sequence>
+        </s:complexType>
+
+      </s:element>
+      <s:complexType name="FlickrLightRequest">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:WebserviceRequest">
+            <s:sequence>
+              <s:element minOccurs="0" maxOccurs="1" name="Items" type="tns:ArrayOfFlickrPhoto" />
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+
+      </s:complexType>
+      <s:complexType name="WebserviceRequest">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="message" type="s:string" />
+          <s:element minOccurs="1" maxOccurs="1" name="count" type="s:int" />
+          <s:element minOccurs="0" maxOccurs="1" name="timeStamp" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ArrayOfFlickrPhoto">
+
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="FlickrPhoto" nillable="true" type="tns:FlickrPhoto" />
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="FlickrPhoto">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="Id" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Title" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="URL" type="s:string" />
+
+          <s:element minOccurs="0" maxOccurs="1" name="SmallUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="MediumUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="LargeUrl" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="OwnerName" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Secret" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Server" type="s:string" />
+          <s:element minOccurs="0" maxOccurs="1" name="Tags" type="s:string" />
+        </s:sequence>
+      </s:complexType>
+
+      <s:element name="GetPhotosBySet">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="SetId" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="perPage" type="s:int" />
+            <s:element minOccurs="1" maxOccurs="1" name="Page" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+
+      <s:element name="GetPhotosBySetResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetPhotosBySetResult" type="tns:FlickrLightRequest" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetPhotosbyTag">
+        <s:complexType>
+
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="Tags" type="s:string" />
+            <s:element minOccurs="1" maxOccurs="1" name="perPage" type="s:int" />
+            <s:element minOccurs="1" maxOccurs="1" name="Page" type="s:int" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="GetPhotosbyTagResponse">
+        <s:complexType>
+
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="GetPhotosbyTagResult" type="tns:FlickrLightRequest" />
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+    
+        
+      <s:complexType name="GetPhotosbyTag"></s:complexType>
+        
+
+        
+        
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="GroupPoolGetPhotosSoapIn">
+    <wsdl:part name="parameters" element="tns:GroupPoolGetPhotos" />
+
+  </wsdl:message>
+  <wsdl:message name="GroupPoolGetPhotosSoapOut">
+    <wsdl:part name="parameters" element="tns:GroupPoolGetPhotosResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetPhotosBySetSoapIn">
+    <wsdl:part name="parameters" element="tns:GetPhotosBySet" />
+  </wsdl:message>
+  <wsdl:message name="GetPhotosBySetSoapOut">
+    <wsdl:part name="parameters" element="tns:GetPhotosBySetResponse" />
+
+  </wsdl:message>
+  <wsdl:message name="GetPhotosbyTagSoapIn">
+    <wsdl:part name="parameters" element="tns:GetPhotosbyTag" />
+  </wsdl:message>
+  <wsdl:message name="GetPhotosbyTagSoapOut">
+    <wsdl:part name="parameters" element="tns:GetPhotosbyTagResponse" />
+  </wsdl:message>
+  <wsdl:portType name="FlickrServiceSoap">
+    <wsdl:operation name="GroupPoolGetPhotos">
+
+      <wsdl:input message="tns:GroupPoolGetPhotosSoapIn" />
+      <wsdl:output message="tns:GroupPoolGetPhotosSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosBySet">
+      <wsdl:input message="tns:GetPhotosBySetSoapIn" />
+      <wsdl:output message="tns:GetPhotosBySetSoapOut" />
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosbyTag">
+      <wsdl:input message="tns:GetPhotosbyTagSoapIn" />
+
+      <wsdl:output message="tns:GetPhotosbyTagSoapOut" />
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="FlickrServiceSoap" type="tns:FlickrServiceSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GroupPoolGetPhotos">
+      <soap:operation soapAction="http://tempuri.org/GroupPoolGetPhotos" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosBySet">
+      <soap:operation soapAction="http://tempuri.org/GetPhotosBySet" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosbyTag">
+      <soap:operation soapAction="http://tempuri.org/GetPhotosbyTag" style="document" />
+      <wsdl:input>
+        <soap:body use="literal" />
+
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="FlickrServiceSoap12" type="tns:FlickrServiceSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http" />
+    <wsdl:operation name="GroupPoolGetPhotos">
+
+      <soap12:operation soapAction="http://tempuri.org/GroupPoolGetPhotos" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosBySet">
+
+      <soap12:operation soapAction="http://tempuri.org/GetPhotosBySet" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="GetPhotosbyTag">
+
+      <soap12:operation soapAction="http://tempuri.org/GetPhotosbyTag" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="FlickrService">
+    <wsdl:port name="FlickrServiceSoap" binding="tns:FlickrServiceSoap">
+      <soap:address location="http://www.hunderttausend.de/shared/webservice/Flickr.asmx" />
+    </wsdl:port>
+    <wsdl:port name="FlickrServiceSoap12" binding="tns:FlickrServiceSoap12">
+      <soap12:address location="http://www.hunderttausend.de/shared/webservice/Flickr.asmx" />
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
