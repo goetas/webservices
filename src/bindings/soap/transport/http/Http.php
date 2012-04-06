@@ -76,11 +76,9 @@ class Http implements ISoapTransport{
 		$code = $info["http_code"];
 		switch($code) {
             case 100: // Continue
-                $this->incoming_payload = $match[2];
                 return $this->_parseResponse();
             case 200:
             case 202:
-                $this->incoming_payload = trim($match[2]);
                 if (!strlen($this->incoming_payload)) {
                     /* Valid one-way message response. */
                     return true;
