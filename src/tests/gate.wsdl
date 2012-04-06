@@ -313,7 +313,7 @@
     <wsdl:operation name="IdentificatoreTicket">
       <soap:operation soapAction="http://www.latuavacanza.com/IdentificatoreTicket" style="document" />
       <wsdl:input>
-        <soap:body use="literal" encodingStyle="" type="" parts="a b c"  namespace="44" />
+        <soap:body use="literal" />
       </wsdl:input>
       <wsdl:output>
         <soap:body use="literal" />
