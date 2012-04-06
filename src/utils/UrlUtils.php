@@ -114,7 +114,7 @@ class UrlUtils {
 		return $url.http_build_query($data);
 	}
 	static function is_absolute_path($path) {
-		return ($path [0] == "/" || substr( $path, 0, 2 ) == "\\\\" || preg_match( "#^[a-z]:\\\\#i", $path ) || preg_match( "#^[a-z-0-9-\.]+://#i", $path ));
+		return ($path [0] == "/" || substr( $path, 0, 2 ) == "\\\\" || preg_match( "#^[a-z]:\\\\#i", $path ) || preg_match( "#^[a-z-0-9-\\.]+://#i", $path ));
 	}
 	static function resolve_url($base, $url) {
 		if(! strlen( $base ))

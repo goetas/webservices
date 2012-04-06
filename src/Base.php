@@ -1,5 +1,7 @@
 <?php
 namespace goetas\webservices;
+use goetas\webservices\exceptions\UnsuppoportedProtocolException;
+
 use goetas\xml\wsdl\Wsdl;
 use goetas\xml\wsdl\Port;
 use goetas\webservices\bindings;

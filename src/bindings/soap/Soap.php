@@ -333,6 +333,7 @@ class Soap extends Binding{
 		
 	}
 	protected function checkIsFault(XMLDomElement $node) {
+		$faultcode= $faultstring = $faultactor = $detail = $faultname = null;
 		if($node->localName=="Fault" && $node->namespaceURI == self::NS_ENVELOPE){
 			foreach ($node->childNodes as $failtDetail){
 				if(in_array($failtDetail->localName, array("faultcode","faultstring","detail","actor","faultname"))) {
