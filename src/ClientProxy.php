@@ -4,7 +4,7 @@ use goetas\xml\wsdl\Port;
 use goetas\xml\wsdl\Binding as WsdlBinding;
 use goetas\webservices\Binding;
 
-class ClientProxy{
+class ClientProxy {
 	/**
 	 * @var Binding
 	 */

@@ -62,7 +62,7 @@ class Client extends Base {
 			$proxy = $this->proxies[$parts[2]][$parts[1]][$parts[0]];
 			$parts[$c++]="*";
 		}while(!$proxy);
-		$proxyObj = call_user_func($proxy, $this,$port,$protocol );		
+		$proxyObj = call_user_func($proxy, $this, $port,$protocol );		
 		return $proxyObj;
 	}
 }

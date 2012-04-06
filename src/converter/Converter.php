@@ -1,6 +1,10 @@
 <?php
 namespace goetas\webservices\converter;
 
+use goetas\xml\xsd\Type;
+
+use goetas\webservices\Base;
+
 use goetas\webservices\Binding;
 use goetas\webservices\Client;
 
@@ -17,31 +21,36 @@ use ReflectionException;
 use goetas\xml\XMLDOMElement;
 use Exception;
 use RuntimeException;
+use DOMNode;
 
 class Converter{
 	const NS_XSI = 'http://www.w3.org/2001/XMLSchema-instance';	
 		
 	/**
-	 * @var Client
+	 * @var Base
 	 */
 	protected $client;
 	
-	public function __construct(Client $client) {
+	public function __construct(Base $client) {
 		$this->client = $client;
 	}
 
-	protected function getInstance(XMLDOMElement  $node, $typeDef) {
+	protected function getInstance(DOMNode $node, Type $typeDef, $t2) {
 
 		$className = self::camelCase($typeDef->getName());
 		
 		if(!($typeDef instanceof BaseComponent)){
 			$className.="Element";
 		}
-		
+
 		$classNs = $this->getNamespaceForNs($typeDef->getNs());
-		$ref = new ReflectionClass("$classNs\\$className");
-		
-		if(!$node->getElementsByTagName("*")->length){
+
+		try {
+			$ref = new ReflectionClass("$classNs\\$className");
+		}catch (\ReflectionException $e){
+			throw new \Exception("Non riesco ad istanziare la classe '$classNs\\$className' per creare il tipo {".$typeDef->getNs()."}:".$typeDef->getName()."", $e->getCode(), $e);
+		}
+		if($typeDef->getSimple()){
 			return $ref->newInstance($node->nodeValue);
 		}else{
 			return $ref->newInstance();
@@ -55,7 +64,10 @@ class Converter{
 		 	"http://www.mercuriosistemi.com/compravendite/compravendite"=>"\\mercurio\\compravendite",
 		 	"http://www.mercuriosistemi.com/esercizioaddon/addon"=>"\\mercurio\\esercizioaddon",
 		 	"http://www.mercuriosistemi.com/vicinanze/vicinanze"=>"\\mercurio\\vicinanze",
-			"http://webservices.hotel.de/MyRES/V1_1"=>"\\hotelde\myres",
+			"http://webservices.hotel.de/MyRES/V1_1"=>"\\hotelde\\myres",
+		
+			"http://www.mercuriosistemi.com/building-rental"=>'\mercurio\buildingrental',
+		
 			"http://samples.soamoa.yesso.eu/"=>"\\soamoa\\yesso",
 			"http://tempuri.org/"=>"\\hunderttausend\\flickr",
 		);
@@ -65,93 +77,119 @@ class Converter{
 		$ns = $typdef->getNs();
 		$name = $typdef->getName();
 		$arrayTypes = array(
-
-			"http://samples.soamoa.yesso.eu/ artistArray"=>1,
-		
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfReservation"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDayRateDetail"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDayRateDetailPair"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDayRateDetailWithContingents"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDayRateDetailWithContingentsPair"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfGuest"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfInt"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfPriceCatering"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfString"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfReservation"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfRoomContingentBase"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfRoomContingentPair"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfSingleReservation"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfTransactionDetail"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDailyRateInfo"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfDate"=>1,
-			"http://webservices.hotel.de/MyRES/V1_1 ArrayOfKeyValueStringPair"=>"Key Value",
-		
-		
+			"http://samples.soamoa.yesso.eu/ artistArray"=>1,		
 		);
 		if($arrayTypes["$ns $name"] || strpos($name, "ArrayOf")===0){
 			return true;
 		}
 	}
-	public function toXml($data, \XMLWriter $xml, $typeDef) {
+	public function toXml($data, \XMLWriter $writer, Type $typeDef) {
 
 		$attributesDef = $typeDef->getAttributes();
-		
+
+				
 		if(!$this->isArray($typeDef)){
 			
-			foreach ($typeDef->getAttributes() as $attributeDef) {
-				$param = $this->client->findToXmlMapper($attributeDef->getComplexType(), $data,$xml);
-				$xml->writeAttribute($attributeDef->getName(), $param);
-			}
-			if($typeDef instanceof SimpleType){;
-				$xml->text($data);
+			if($typeDef instanceof SimpleType){
+				$writer->text($data);
+				$this->client->findToXmlMapper($typeDef, $data, $writer);
 			}else{
-			
-				foreach ($typeDef->getElements() as $elementDef) {
-					if(!$data) continue;
-					$methName = "get".self::camelCase($elementDef->getName());
-					if(!method_exists($data, $methName)){
-						throw new RuntimeException("Non trovo il metodo $methName, sull oggetto di tipo ".get_class($data).", per creare il tipo ".$typeDef);
-					}
-					$val = $data->{$methName}();
-					
-					if($elementDef->getMin()>0 || $val!==null){
-						$xml->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
-											
-						if($val!==null){
-							$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $xml);
-						}elseif ($elementDef->getMin()>0  && $elementDef->isNillable()){
-							$xml->writeAttributeNs('xsi', 'nil', self::NS_XSI, 'true');
-						}
-						$xml->endElement();
-					}
 				
+				foreach ($typeDef->getAttributes() as $attributeDef) {
+					$val = $this->getReflectionAttr(self::camelCaseAttr($attributeDef->getName()), $data)->getValue($data);
+
+					if ($val!==null || $attributeDef->isRequred()){
+						
+						$writer->startAttribute($attributeDef->getName());
+						
+						$this->client->findToXmlMapper($attributeDef->getComplexType(), $val , $writer);
+						
+						$writer->endAttribute();
+					}
+				}
+				
+				if ($typeDef->getSimple()){
+					$this->client->findToXmlMapper($typeDef->getSimple(), $data->getValue(), $writer);
+				}else{
+
+					foreach ($typeDef->getElements() as $elementDef) {
+						if(!$data) continue;
+		
+						$val = $this->getReflectionAttr(self::camelCaseAttr($elementDef->getName()), $data)->getValue($data);
+						if($elementDef->getMin()>0 || $val!==null){
+							$writer->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
+												
+							if($val!==null){
+								$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $writer);
+							}elseif ($elementDef->getMin()>0  && $elementDef->isNillable()){
+								$writer->writeAttributeNs('xsi', 'nil', self::NS_XSI, 'true');
+							}
+							$writer->endElement();
+						}
+					
+					}
 				}
 			}
 		}else{ // array types
 			foreach ($typeDef->getElements() as $elementDef) {
-				foreach ($data as $key => &$val){
-					$xml->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
-					$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $xml);
-					$xml->endElement();
+				foreach ($data as $key => $val){
+					$writer->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
+					
+					$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $writer);
+					
+					$writer->endElement();
 				}
 			}
 		}
 	}
-	public function fromXml(XMLDOMElement  $node, $type) {
+	protected function getReflectionObj($obj) {
+		$c = get_class($obj);
+		if(!isset(self::$refCacheObj[$c])){
+			self::$refCacheObj[$c] = new \ReflectionObject($obj);
+		}
+		return self::$refCacheObj[$c];
+	}	
+	protected static $refCacheProp = array();
+	protected static $refCacheObj = array();
+	/**
+
+	 * @param string $name
+	 * @param object $obj
+	 * @return \ReflectionProperty
+	 */
+	protected function getReflectionAttr($name, $obj) {
+		if(!is_object($obj)){
+			try {
+				throw new \Exception("xxxx");	
+			} catch (\Exception $e) {
+				print_r($obj);
+				die($e);
+			}
+		}
+		$c = get_class($obj);
+		if(!isset(self::$refCacheProp[$c][$name])){
+			$ref = $this->getReflectionObj($obj);
+			try {
+				$p = $ref->getProperty($name);	
+			} catch (\ReflectionException $e) {
+				throw new \ReflectionException("Non trovo la proprieta '$name' su '$c'", $e->getCode());
+			}
+			$p->setAccessible(true);
+			self::$refCacheProp[$c][$name] = $p;
+		}
+		return self::$refCacheProp[$c][$name];
+	}
+	public function fromXml(\DOMNode $node, $type) {
 		
 		if($type instanceof BaseComponent){
 			$typeDef = $type;
 		}else{
 			$typeDef = $type->getComplexType();
 		}
-		
-		
-		//echo $node->saveXML();
-		//echo " dichiarato $ns $type  -  restituito ";echo $typeDef." <br/>\n\n";
-
+	
 		if(!$this->isArray($typeDef)){
 			
-			$obj = $this->getInstance( $node, $type);
+			$obj = $this->getInstance( $node, $type, $typeDef);
 			
 			$elementsDef = $typeDef->getElements();
 			$attributesDef = $typeDef->getAttributes();
@@ -161,18 +199,20 @@ class Converter{
 					return null;
 				}
 				
-				$attributeDef = $attributesDef[$attribute->localName];
-				
-				
-				if(!$attributeDef){
-					throw new Exception("Manca la definizione per l'attributo {{$attribute->namespaceURI}}{$attribute->localName}");
+				foreach ($attributesDef as $attributeDef_t){
+					if($attribute->localName == $attributeDef_t->getName()){
+						$attributeDef = $attributeDef_t;
+						break;
+					}
 				}
+
+				if(!$attributeDef){
+					throw new Exception("Manca la definizione sul XSD per l'attributo {{$attribute->namespaceURI}}{$attribute->localName}");
+				}
+								
+				$param = $this->client->findFromXmlMapper($attributeDef->getComplexType(), $attribute);
 				
-				$methName = "set".self::camelCase($attributeDef->getName());
-				
-				$param = $this->findFromXmlMapper($attributeDef->getComplexType(), $attribute);
-				
-				$obj->{$methName}($param);
+				$this->getReflectionAttr(self::camelCaseAttr($attributeDef->getName()), $obj)->setValue($obj, $param);
 				
 			}
 
@@ -180,22 +220,20 @@ class Converter{
 				if($element instanceof XMLDOMElement){
 						
 					foreach ($elementsDef as $elementDef_t){
-						//echo $element->localName." == ".$elementDef_t->getName()."<br/>\n"; 
 						if($element->localName == $elementDef_t->getName()){
 							$elementDef = $elementDef_t;
 							break;
 						}
 					}
 					if(!$elementDef){
-						
 						throw new Exception("Manca la definizione {{$element->namespaceURI}}{$element->localName}");
 					}
 					
-					$methName = "set".self::camelCase($elementDef->getName());
 					$param = $this->client->findFromXmlMapper($elementDef->getComplexType(), $element);
-					$obj->{$methName}($param);
+					$this->getReflectionAttr(self::camelCaseAttr($elementDef->getName()), $obj)->setValue($obj, $param);
 				}
 			}
+			
 			return $obj;
 		}else{
 			$ret = array();

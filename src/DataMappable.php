@@ -35,37 +35,26 @@ abstract class DataMappable {
 	protected function setupDefaultMap(){
 		$this->addStandardXsdMappings();
 	}
-	protected function toWrapper ($function){
-		return function( $typeDef, $data, $xml, $_this)use($function){
-			$ret = call_user_func($function, $typeDef, $data, $xml, $_this);
-			if(!is_null($ret)){
-				$xml->text($ret);
-			}
-		};
-	}
-	
+
 	protected function addStandardXsdMappings() {
-		$simpleToStr = function($typeDef, $data, $node, $_this){
-			if (is_null($data)) return null;
-			return strval($data);
+		
+		$simpleToStr = function($typeDef, $data, $writer, $_this){
+			$writer->text(strval($data));
 		};
-		$simpleToInt = function($typeDef, $data, $node, $_this){
-			if (is_null($data)) return null;
-			return intval($data);
+		$simpleToInt = function($typeDef, $data, $writer, $_this){
+			$writer->text(intval($data));
 		};
-		$simpleToFloat= function($typeDef, $data, $node, $_this){
-			if (is_null($data)) return null;
-			return floatval($data);
+		$simpleToFloat= function($typeDef, $data, $writer, $_this){
+			$writer->text(floatval($data));
 		};
 		
-		$simpleToBool = function($typeDef, $data, $node, $_this){
-			if (is_null($data)) return null;
-			return ($data)?'true':'false';
+		$simpleToBool = function($typeDef, $data, $writer, $_this){
+			$writer->text(($data)?'true':'false');
 		};
-		$simpleToDecimal = function($typeDef, $data, $node, $_this){
-			if (is_null($data)) return null;
-			return number_format(round($data,2), 2,'.','');
+		$simpleToDecimal = function($typeDef, $data, $writer, $_this){
+			$writer->text(number_format(round($data,2), 2,'.',''));
 		};
+		
 		
 		$simpleFromStr = function($typeDef ,$node, $_this){
 			return strval($node->nodeValue);
@@ -86,10 +75,10 @@ abstract class DataMappable {
 		$this->addToXmlMapper(self::XSD_NS, "integer", $simpleToInt);
 		$this->addToXmlMapper(self::XSD_NS, "int", $simpleToInt);
 		$this->addToXmlMapper(self::XSD_NS, "short", $simpleToInt);
-		
 		$this->addToXmlMapper(self::XSD_NS, "decimal", $simpleToDecimal);
 		$this->addToXmlMapper(self::XSD_NS, "double", $simpleToFloat);
 		
+		$this->addToXmlMapper(self::XSD_NS, "gYear", $simpleToInt);
 		
 		
 		$this->addFromXmlMapper(self::XSD_NS, "boolean", $simpleFromBool);
@@ -97,38 +86,53 @@ abstract class DataMappable {
 		$this->addFromXmlMapper(self::XSD_NS, "integer", $simpleFromInt);
 		$this->addFromXmlMapper(self::XSD_NS, "int", $simpleFromInt);
 		$this->addFromXmlMapper(self::XSD_NS, "short", $simpleFromInt);
-		
 		$this->addFromXmlMapper(self::XSD_NS, "decimal", $simpleFromFloat);
 		$this->addFromXmlMapper(self::XSD_NS, "double", $simpleFromFloat);
 		
 		
-		$this->addToXmlMapper(self::XSD_NS, "dateTime", function($typeDef, $data, $node, $_this){
+		$this->addFromXmlMapper(self::XSD_NS, "gYear", $simpleFromInt);
+		
+		
+		$this->addToXmlMapper(self::XSD_NS, "date", function($typeDef, $data, \XMLWriter $writer, $_this){
 			if($data instanceof \DateTime){
-				return $data->format(DATE_W3C);
+				$writer->text($data->format("Y-m-d"));
 			}elseif(is_numeric($data)){
-				return date(DATE_W3C, $data);
+				$writer->text(date("Y-m-d", $data));
+			}else{
+				throw new \InvalidArgumentException("Tipo di variabile per XSD:'date' non valido (".(gettype($data)!=='object'?:get_class($data)).")");	
 			}
-			throw new InvalidArgumentException("Tipo di variabile per la data non valido");
+		});
+		$this->addToXmlMapper(self::XSD_NS, "dateTime", function($typeDef, $data, \XMLWriter $writer, $_this){
+			if($data instanceof \DateTime){
+				$writer->text( $data->format(DATE_W3C));
+			}elseif(is_numeric($data)){
+				$writer->text(date(DATE_W3C, $data));
+			}else{
+				throw new \InvalidArgumentException("Tipo di variabile per XSD:'dateTime' non valido");
+			}
 		});
 		$this->addFromXmlMapper(self::XSD_NS, "dateTime", function($typeDef ,$node, $_this){
-			return new \ambient\date\ADateTime($node->nodeValue);
+			return new \DateTime($node->nodeValue);
+		});
+		$this->addFromXmlMapper(self::XSD_NS, "date", function($typeDef ,$node, $_this){
+			return new \DateTime($node->nodeValue);
 		});
 		
 	}
 	
-	public function findToXmlMapper(XSDBase $typeDef, $data, $node) {
+	public function findToXmlMapper(XSDBase $typeDef, $data, $writer) {
 		
 		$ns = $typeDef->getNs();
 		$type = $typeDef->getName();
 		
 		if(isset($this->mappers[$ns][$type]["to"])){
-			return call_user_func($this->toWrapper($this->mappers[$ns][$type]["to"]), $typeDef, $data, $node, $this);
+			return call_user_func($this->mappers[$ns][$type]["to"], $typeDef, $data, $writer, $this);
 		}
 	
 		if(isset($this->genericMappers[$ns]["to"])){
 			foreach (array_reverse($this->genericMappers[$ns]["to"]) as $m){
 				try {
-					return call_user_func($this->toWrapper($m), $typeDef, $data, $node, $this);
+					return call_user_func($m, $typeDef, $data, $writer, $this);
 				} catch (ConversionNotFoundException $e) {
 				}
 			}
@@ -137,18 +141,18 @@ abstract class DataMappable {
 			
 			foreach (array_reverse($this->genericMappers["*"]["to"]) as $m){
 				try {
-					return call_user_func($this->toWrapper($m), $typeDef, $data,$node,  $this);
+					return call_user_func($m, $typeDef, $data, $writer,  $this);
 				} catch (ConversionNotFoundException $e) {
 					//echo $e;
 				}
 			}
 		}
-		throw new ConversionNotFoundException("Non trovo nessuna conversione ad XML per ".($isElement?" l' elemento ":"il tipo")." {{$ns}}$type");
+		throw new ConversionNotFoundException("Non trovo nessuna conversione ad XML per {{$ns}}$type");
 	}
 	/**
 	 * @return mixed
 	 */
-	public function findFromXmlMapper($typeDef, XMLDOMElement $node) {
+	public function findFromXmlMapper($typeDef, $node) {
 
 		$ns = $typeDef->getNs();
 		$type = $typeDef->getName();
@@ -174,7 +178,7 @@ abstract class DataMappable {
 				}
 			}
 		}
-		throw new ConversionNotFoundException("Non trovo nessuna conversione da XML per ".($isElement?" l' elemento ":"il tipo")." {{$ns}}$type");
+		throw new ConversionNotFoundException("Non trovo nessuna conversione da XML per {{$ns}}$type");
 	}
 	
 	public function addToXmlMapper($ns, $type, $callback){

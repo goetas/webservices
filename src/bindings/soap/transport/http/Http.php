@@ -180,58 +180,52 @@ class Http implements ISoapTransport{
         // generates the headers, but having the XML is usually the most
         // important part for tracing/debugging.
         $this->input = implode("\r\n", $headers)."\r\n".$message;
-        
 
 		$this->output = curl_exec($ch);
 		
 		
         $info = curl_getinfo($ch);
         
-        /*
-        var_dump($this->output );
-        print_r($info);
-		echo "\n\n";
-		ob_end_flush();
-		flush();
-		        
-		*/
+		
         curl_close($ch);
         
-        //echo str_replace("><", ">\n<",$this->input)."\n\n\n\n\n"; echo str_replace("><", ">\n<",$this->output)."\n\n\n\n\n";
         
 		$this->checkResponse($info,  $this->output);
-		$retDom = new \goetas\xml\XMLDom();
+		
 		
 		if(preg_match ("/^(.*?)\r?\n\r?\n(.*)/sm" , $this->output, $mch)){
+			$retDom = new \goetas\xml\XMLDom();
 			list(,$headersStr, $xmlString) = $mch;
 	 
 			list($headers, $cookies) = $this->parseHeaders($headersStr);
-			$this->checkDeCompression($xmlString, $headers);
-
-			$retDom->loadXml($xmlString);
-
+			$xmlString = $this->checkDeCompression($xmlString, $headers);
+			//var_dump($xmlString); die();
+			try {
+				$retDom->loadXMLStrict($xmlString);	
+			} catch (\DOMException $e) {
+				throw new \Exception("Wrong Response, expected XML. Found $xmlString", 100, $e);
+			}
+			return $retDom;
 		}
-		return $retDom;        
+		throw new \Exception("Wrong Response, expected data");
+		
 	}
 	protected function checkCompression(&$xml, array &$headers) {
-		
-		
-		//$headers['Content-Encoding'] = 'deflate';
 		
 		if(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='gzip'){
 			$xml = str_repeat(0, 10).gzdeflate($xml);
 		}elseif(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='deflate'){
 			$xml = gzcompress($xml);
 		}
-		
 		$headers['Content-Length'] = strlen($xml);
 	}
-	protected function checkDeCompression(&$xmlInput, array $headers) {
+	protected function checkDeCompression($xmlInput, array $headers) {
 		if(isset($headers["content-encoding"]) && $headers["content-encoding"]=='gzip'){
-			$xmlInput = gzinflate(substr($xmlInput, 10));
+			return gzinflate(substr($xmlInput, 10));
 		}elseif(isset($headers["content-encoding"]) && $headers["content-encoding"]=='deflate'){
-			$xmlInput = gzuncompress($xmlInput);
+			return gzuncompress($xmlInput);
 		}
+		return $xmlInput;
 	}
 	public function setOption($name, $value){
 		$this->options[$name]=$value;
@@ -320,5 +314,8 @@ class Http implements ISoapTransport{
         }
 
         return implode("; ", $cookies);
+    }
+    public function reply($xml) {
+    	echo $xml;
     }
 }

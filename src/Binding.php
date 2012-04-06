@@ -2,15 +2,18 @@
 namespace goetas\webservices;
 
 
+use goetas\xml\wsdl\Binding as WsdlBinding;
+
 use goetas\xml\xsd\BaseComponent as XSDBase;
-
-
 
 use goetas\xml\XMLDomElement;
 
 use goetas\webservices\exceptions\ConversionNotFoundException;
 
 use goetas\xml\wsdl\Message;
+
+use goetas\webservices\Message as RawMessage;
+
 use goetas\xml\wsdl\MessagePart;
 use goetas\xml\wsdl\BindingOperation;
 use goetas\xml\wsdl\Port;
@@ -26,7 +29,7 @@ abstract class Binding {
 	 */
 	protected $port;
 	/**
-	 * @var Client
+	 * @var Base
 	 */
 	protected $client;
 	/**
@@ -34,20 +37,13 @@ abstract class Binding {
 	 */
 	protected $container;
 
-	public function __construct(Client $client, Port $port) {
+	public function __construct(Base $client, Port $port) {
 
 		$this->port = $port;
 		$this->client = $client;
 		$this->container = new SchemaContainer();
 		$this->container->addFinder(array($this->client->getWsdl(), 'getSchemaNode'));		
-	}
-	/**
-	 * @return Client
-	 */
-	public function getClient() {
-		return $this->client;
-	}
-	
+	}	
 	protected function getPrefixFor($ns) {
 		return $this->client->getPrefixFor($ns);
 	}
@@ -58,7 +54,6 @@ abstract class Binding {
 			$this->encodeParameter($xml, $operation, $part, $params[$c++]);
 		}		
 	}
-	
 	public function callOperation(BindingOperation $bOperation, array $params) {
 		return $this->send($bOperation, $params);
 	}
@@ -73,10 +68,19 @@ abstract class Binding {
 		}
 		return array($ns, $typeName);
 	}
-	
+	/**
+	 * 
+	 * @param WsdlBinding $binding
+	 * @param RawMessage $message
+	 * @return \goetas\xml\wsd\BindingOperation
+	 */
+	abstract public function findOperation(WsdlBinding $binding, RawMessage $message);
 	abstract public function send(BindingOperation $bOperation, array $params);
+	//abstract public function recieve(BindingOperation $bOperation, RawMessage $request);
 	abstract public function encodeParameter($xml, BindingOperation $operation, MessagePart $message, $data);
 	abstract public function decodeParameter(XMLDomElement $srcNode, BindingOperation $bOperation, MessagePart $message);
+	
+	abstract public function handleServerError(\Exception $exception);
 	
 		
 }

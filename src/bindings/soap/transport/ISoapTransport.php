@@ -7,4 +7,5 @@ interface ISoapTransport extends ITransport{
 	public function setAction($action);
 	public function getAction();
 	public function setOption($name, $value);
+	public function reply($xml);
 }

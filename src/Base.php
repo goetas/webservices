@@ -28,7 +28,6 @@ class Base extends DataMappable{
 			return $conv->fromXml($node, $typeDef);
 		});
 	}
-	
 	/**
 	 * 
 	 * @return Wsdl
