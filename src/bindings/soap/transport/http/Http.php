@@ -22,7 +22,7 @@ class Http implements ISoapTransport{
 	protected $cookies=array();
 	
 	public function __construct() {
-		$this->userAgent = "goetas-soap-".phpversion();
+		$this->userAgent = "goetas-soap-transport-".phpversion();
 	}
 	public function getUri() {
 		return $this->uri;
@@ -144,8 +144,7 @@ class Http implements ISoapTransport{
         if ($this->timeout) {
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
         }
-        
-        
+
         
         $this->checkCompression($message, $headers);
         
@@ -191,18 +190,13 @@ class Http implements ISoapTransport{
 		
 		
 		if(preg_match ("/^(.*?)\r?\n\r?\n(.*)/sm" , $this->output, $mch)){
-			$retDom = new \goetas\xml\XMLDom();
+			
 			list(,$headersStr, $xmlString) = $mch;
 	 
 			list($headers, $cookies) = $this->parseHeaders($headersStr);
 			$xmlString = $this->checkDeCompression($xmlString, $headers);
-			//var_dump($xmlString); die();
-			try {
-				$retDom->loadXMLStrict($xmlString);	
-			} catch (\DOMException $e) {
-				throw new \Exception("Wrong Response, expected XML. Found $xmlString", 100, $e);
-			}
-			return $retDom;
+			
+			return $xmlString;
 		}
 		throw new \Exception("Wrong Response, expected data");
 		
@@ -312,9 +306,9 @@ class Http implements ISoapTransport{
 
         return implode("; ", $cookies);
     }
-    public function reply($xml) {
-    	header("Content-type: text/xml");
-    	header("Content-length: ".strlen($xml));
-    	echo $xml;
+    public function reply($message) {
+    	header("Content-type: ".$this->getContentType());
+    	header("Content-length: ".strlen($message));
+    	echo $message;
     }
 }

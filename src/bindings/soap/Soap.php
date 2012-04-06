@@ -188,7 +188,16 @@ class Soap extends Binding{
 		
 		$xml = $this->buildXMLMessage($bOperation, $inputMessage, $params);
 	
-		$retDoc = $this->transport->send($xml);
+		$response = $this->transport->send($xml);
+		
+	
+		try {
+			$retDoc = new \goetas\xml\XMLDom();
+			$retDoc->loadXMLStrict($response);	
+		} catch (\DOMException $e) {
+			throw new \Exception("Wrong Response, expected XML. Found ".strlen($response, 0,2000), 100, $e);
+		}
+		
 		list($heads, $bodys, $env) = $this->envelopeParts($retDoc);
 				
 		if($outMessage){
