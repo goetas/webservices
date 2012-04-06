@@ -196,7 +196,7 @@ class Soap extends Binding{
 			$retDoc = new \goetas\xml\XMLDom();
 			$retDoc->loadXMLStrict($response);	
 		} catch (\DOMException $e) {
-			throw new \Exception("Wrong Response, expected XML. Found ".strlen($response, 0,2000), 100, $e);
+			throw new \Exception("Wrong Response, expected XML. Found ".substr($response, 0,2000), 100, $e);
 		}
 		
 		list($heads, $bodys, $env) = $this->envelopeParts($retDoc);

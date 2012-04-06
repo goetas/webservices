@@ -17,8 +17,7 @@ class Http implements ISoapTransport{
 	protected $input;
 	protected $output;
 	protected $timeout = 0;
-	
-	
+
 	protected $cookies=array();
 	
 	public function __construct() {
