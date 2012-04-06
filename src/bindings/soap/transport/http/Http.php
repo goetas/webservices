@@ -1,6 +1,6 @@
 <?php
 namespace goetas\webservices\bindings\soap\transport\http;
-use goetas\webservices\exceptions\TransportException;
+use goetas\webservices\bindings\soap\TransportException;
 use goetas\xml\XMLDom;
 use InvalidArgumentException;
 
@@ -73,6 +73,9 @@ class Http implements ISoapTransport{
 		    [redirect_time] => 0
 )
 		 */
+		if (!$this->uri){
+			throw new TransportException("Invalid URI");
+		}
 		$code = $info["http_code"];
 		switch($code) {
             case 100: // Continue
@@ -179,10 +182,11 @@ class Http implements ISoapTransport{
 
 		$this->output = curl_exec($ch);
 		
+	
 		
         $info = curl_getinfo($ch);
         
-		
+	
         curl_close($ch);
         
         

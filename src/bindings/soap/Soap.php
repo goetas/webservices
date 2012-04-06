@@ -3,7 +3,7 @@ namespace goetas\webservices\bindings\soap;
 
 use goetas\webservices\Base;
 
-use goetas\webservices\exceptions\UnsuppoportedTransportException;
+use goetas\webservices\bindings\soap\UnsuppoportedTransportException;
 use goetas\webservices\Binding;
 use goetas\webservices\Client;
 use goetas\xml\wsdl\BindingOperation;
@@ -41,8 +41,9 @@ class Soap extends Binding{
 		$this->transport = $this->getTransport($this->port->getBinding());
 		
 		$uri = $port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>self::NS));
-		if(1){
-			$this->transport->setUri("http://sviluppo.netanday.it/agenzie-service/");
+		
+		if($uriAlternative = $client->getOption('wsdl.port.'.$port->getName(), 'location')){
+			$this->transport->setUri($uriAlternative);
 		}else{
 			$this->transport->setUri($uri);
 		}		

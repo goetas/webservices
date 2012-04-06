@@ -20,6 +20,14 @@ class Base extends DataMappable{
 		$this->options = $options;
 		$this->addGenericMapper();
 	}
+	public function getOption($ns, $name) {
+		if (isset($this->options[$ns][$name])){
+			return $this->options[$ns][$name];
+		}
+	}
+	public function setOption($ns, $name, $value) {
+		return $this->options[$ns][$name] = $value;
+	}
 	protected function addGenericMapper() {
 		$conv  = new Converter($this);
 				
