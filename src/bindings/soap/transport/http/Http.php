@@ -115,7 +115,6 @@ class Http implements ISoapTransport{
 
 		$ch = curl_init($this->getUri());
 
-
         if (isset($this->options['proxy_host'])) {
             $port = isset($this->options['proxy_port']) ? $this->options['proxy_port'] : 8080;
             curl_setopt($ch, CURLOPT_PROXY, $this->options['proxy_host'] . ':' . $port);
@@ -314,6 +313,8 @@ class Http implements ISoapTransport{
         return implode("; ", $cookies);
     }
     public function reply($xml) {
+    	header("Content-type: text/xml");
+    	header("Content-length: ".strlen($xml));
     	echo $xml;
     }
 }
