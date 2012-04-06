@@ -10,9 +10,7 @@ use goetas\xml\XMLDomElement;
 
 use goetas\webservices\exceptions\ConversionNotFoundException;
 
-use goetas\xml\wsdl\Message;
-
-use goetas\webservices\Message as RawMessage;
+use goetas\xml\wsdl\Message as WsdlMessage;
 
 use goetas\xml\wsdl\MessagePart;
 use goetas\xml\wsdl\BindingOperation;
@@ -21,7 +19,6 @@ use goetas\xml\xsd\SchemaContainer;
 
 use Exception;
 use InvalidArgumentException;
-
 
 abstract class Binding {
 	/**
@@ -48,7 +45,7 @@ abstract class Binding {
 		return $this->client->getPrefixFor($ns);
 	}
 	
-	public function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
+	public function buildMessage($xml, BindingOperation $operation, WsdlMessage $message, array $params){
 		$c = 0;
 		foreach ($message->getParts() as $part){
 			$this->encodeParameter($xml, $operation, $part, $params[$c++]);
@@ -71,12 +68,11 @@ abstract class Binding {
 	/**
 	 * 
 	 * @param WsdlBinding $binding
-	 * @param RawMessage $message
+	 * @param \goetas\webservices\Message $message
 	 * @return \goetas\xml\wsd\BindingOperation
 	 */
-	abstract public function findOperation(WsdlBinding $binding, RawMessage $message);
+	abstract public function findOperation(WsdlBinding $binding, Message $message);
 	abstract public function send(BindingOperation $bOperation, array $params);
-	//abstract public function recieve(BindingOperation $bOperation, RawMessage $request);
 	abstract public function encodeParameter($xml, BindingOperation $operation, MessagePart $message, $data);
 	abstract public function decodeParameter(XMLDomElement $srcNode, BindingOperation $bOperation, MessagePart $message);
 	
