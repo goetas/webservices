@@ -66,9 +66,6 @@ class Soap extends Binding{
 		}
 		return parent::getPrefixFor($ns);
 	}
-	public function callOperation(BindingOperation $bOperation, array $params) {
-		return $this->send($bOperation, $params);
-	}
 	/**
 	 * @see goetas\webservices.Binding::findOperation()
 	 * @return \goetas\xml\wsd\BindingOperation
@@ -153,8 +150,6 @@ class Soap extends Binding{
 		return $xml->outputMemory(false);
 	}
 	public function handleServerError(\Exception $exception){
-
-			
 		$xml = new \XMLWriter();
 		$xml->openMemory();
 		$xml->startElementNS ( $this->soapPrefix , 'Envelope' , self::NS_ENVELOPE );
@@ -176,7 +171,7 @@ class Soap extends Binding{
 		$xml->endElement();//Fault
 		$xml->endElement();//Body
 		$xml->endElement();//Envelope
-		$this->transport->reply($xml->outputMemory(false));
+		$this->transport->reply($xml->outputMemory(false), true);
 	}
 	public function send(BindingOperation $bOperation, array $params) {
 

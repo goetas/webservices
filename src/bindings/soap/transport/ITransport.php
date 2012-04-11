@@ -13,5 +13,5 @@ interface ITransport{
 	 * @param unknown_type $message
 	 * @return void
 	 */
-	public function reply($message);
+	public function reply($message, $isError = false);
 }

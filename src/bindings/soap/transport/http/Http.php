@@ -309,9 +309,12 @@ class Http implements ISoapTransport{
 
         return implode("; ", $cookies);
     }
-    public function reply($message) {
+    public function reply($message, $isError = false) {
     	header("Content-type: ".$this->getContentType());
     	header("Content-length: ".strlen($message));
+    	if($isError){
+    		header('HTTP/1.1 500 Internal Server Error'); 
+    	}
     	echo $message;
     }
 }

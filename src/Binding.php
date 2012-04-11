@@ -75,7 +75,6 @@ abstract class Binding {
 	abstract public function send(BindingOperation $bOperation, array $params);
 	abstract public function encodeParameter($xml, BindingOperation $operation, MessagePart $message, $data);
 	abstract public function decodeParameter(XMLDomElement $srcNode, BindingOperation $bOperation, MessagePart $message);
-	
 	abstract public function handleServerError(\Exception $exception);
 	
 		
