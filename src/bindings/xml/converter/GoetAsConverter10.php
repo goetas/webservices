@@ -27,7 +27,7 @@ use Exception;
 use RuntimeException;
 use DOMNode;
 
-class Converter {
+class GoetAsConverter10 {
 	const NS_XSI = 'http://www.w3.org/2001/XMLSchema-instance';	
 		
 	/**

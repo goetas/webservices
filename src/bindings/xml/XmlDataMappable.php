@@ -1,7 +1,7 @@
 <?php
 namespace goetas\webservices\bindings\xml;
 
-use goetas\webservices\bindings\xml\converter\Converter;
+use goetas\webservices\bindings\xml\converter\GoetAsConverter10;
 
 use goetas\xml\xsd\ComplexElement;
 
@@ -32,7 +32,10 @@ abstract class XmlDataMappable {
 	
 	public function __construct() {
 		$this->addStandardXsdMappings();
-		$conv  = new Converter($this);
+		$this->addGoetasMapping();
+	}
+	public function addGoetasMapping() {
+		$conv  = new GoetAsConverter10($this);
 				
 		$this->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
 			return $conv->toXml($data, $node, $typeDef);
