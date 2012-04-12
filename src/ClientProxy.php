@@ -6,7 +6,7 @@ use goetas\webservices\Binding;
 
 class ClientProxy {
 	/**
-	 * @var Binding
+	 * @var IClientBinding
 	 */
 	protected $binding;
 	/**
@@ -21,13 +21,13 @@ class ClientProxy {
 	 * @param Client $client
 	 * @param Port $port
 	 */
-	public function __construct(Client $client, Port $port, Binding $binding) {
+	public function __construct(Client $client, Port $port, IClientBinding $binding) {
 		$this->client = $client;
 		$this->port = $port;
 		$this->binding = $binding;
 	}
 	public function __call($method, $params) {
-		$bindingOperation = $this->port->getBinding()->getOperation($method);
-		return $this->binding->callOperation($bindingOperation, $params);
+		$bindingOperation = $this->binding->findOperation($this->port->getBinding(), $method, $params);
+		return $this->binding->send($bindingOperation, $params);
 	}
 }

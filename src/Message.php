@@ -6,7 +6,7 @@ class Message {
 	public function getMeta($name){
 		return $this->meta[$name];
 	}
-	public function setMeta($name, $value){
+	public function setMeta($name, $value = null){
 		$this->meta[$name] = $value;
 	}
 	public function getData(){

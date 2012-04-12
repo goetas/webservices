@@ -2,6 +2,8 @@
 namespace goetas\webservices;
 
 
+use goetas\webservices\converter\Converter;
+
 use goetas\xml\wsdl\Binding as WsdlBinding;
 
 use goetas\xml\xsd\BaseComponent as XSDBase;
@@ -20,7 +22,7 @@ use goetas\xml\xsd\SchemaContainer;
 use Exception;
 use InvalidArgumentException;
 
-abstract class Binding {
+abstract class Binding implements IBinding {
 	/**
 	 * @var Port
 	 */
@@ -35,26 +37,24 @@ abstract class Binding {
 	protected $container;
 
 	public function __construct(Base $client, Port $port) {
-
 		$this->port = $port;
 		$this->client = $client;
 		$this->container = new SchemaContainer();
 		$this->container->addFinder(array($this->client->getWsdl(), 'getSchemaNode'));		
 	}	
-	protected function getPrefixFor($ns) {
-		return $this->client->getPrefixFor($ns);
+	protected $prefixes = array();	
+	public function getPrefixFor($ns) {
+		if(!isset($this->prefixes[$ns])){
+			$this->prefixes[$ns] = count($this->prefixes[$ns])?max($this->prefixes)+1:1; 
+		}
+		return "ns".$this->prefixes[$ns];
 	}
-	
 	public function buildMessage($xml, BindingOperation $operation, WsdlMessage $message, array $params){
 		$c = 0;
 		foreach ($message->getParts() as $part){
 			$this->encodeParameter($xml, $operation, $part, $params[$c++]);
 		}		
-	}
-	public function callOperation(BindingOperation $bOperation, array $params) {
-		return $this->send($bOperation, $params);
-	}
-	
+	}	
 	protected function getMessageTypeAndNs(MessagePart $message) {
 		if($message->isType()){
 			$typeName = $message->getType()->getName();
@@ -65,17 +65,14 @@ abstract class Binding {
 		}
 		return array($ns, $typeName);
 	}
-	/**
-	 * 
-	 * @param WsdlBinding $binding
-	 * @param \goetas\webservices\Message $message
-	 * @return \goetas\xml\wsd\BindingOperation
-	 */
-	abstract public function findOperation(WsdlBinding $binding, Message $message);
-	abstract public function send(BindingOperation $bOperation, array $params);
-	abstract public function encodeParameter($xml, BindingOperation $operation, MessagePart $message, $data);
-	abstract public function decodeParameter(XMLDomElement $srcNode, BindingOperation $bOperation, MessagePart $message);
-	abstract public function handleServerError(\Exception $exception);
-	
-		
+	public function addGenericMapper(Base $base) {
+		$conv  = new Converter($base, $this);
+				
+		$base->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
+			return $conv->toXml($data, $node, $typeDef);
+		}); 
+		$base->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
+			return $conv->fromXml($node, $typeDef);
+		});
+	}		
 }

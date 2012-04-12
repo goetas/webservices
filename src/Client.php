@@ -21,7 +21,16 @@ class Client extends Base {
 			return new ClientProxy($client, $port, $protocol);
 		};
 	}
-	public function registerProxy($proxy, $serviceNs=null, $serviceName=null, $servicePort=null ) {
+	/*
+	 * @return IClientBinding
+	 */
+	public function getProtocol(Port $port) {
+		$this->supportedBindings["http://schemas.xmlsoap.org/wsdl/soap/"] = function(Base $client, Port $port){
+			return new bindings\soap\SoapClient($client, $port);
+		};
+		return parent::getProtocol($port);
+	}
+	public function registerProxyObject($proxy, $serviceNs=null, $serviceName=null, $servicePort=null ) {
 		if(!is_callable($proxy)){
 			throw new InvalidArgumentException("Invalid callback as proxy");
 		}

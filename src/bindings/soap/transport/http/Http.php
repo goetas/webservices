@@ -1,5 +1,7 @@
 <?php
 namespace goetas\webservices\bindings\soap\transport\http;
+use goetas\webservices\Message;
+
 use goetas\webservices\bindings\soap\TransportException;
 use goetas\xml\XMLDom;
 use InvalidArgumentException;
@@ -310,11 +312,15 @@ class Http implements ISoapTransport{
         return implode("; ", $cookies);
     }
     public function reply($message, $isError = false) {
-    	header("Content-type: ".$this->getContentType());
-    	header("Content-length: ".strlen($message));
+    	
+    	$response = new Message();
+    	$response->setMeta("Content-type", $this->getContentType());
+    	$response->setMeta("Content-length", strlen($message));
+    	$response->setMeta("Accept-Encoding", "gzip, deflate");
+
     	if($isError){
-    		header('HTTP/1.1 500 Internal Server Error'); 
+    		$response->setMeta("HTTP/1.1 500 Internal Server Error"); 
     	}
-    	echo $message;
+    	return $response;
     }
 }

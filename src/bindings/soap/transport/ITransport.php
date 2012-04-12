@@ -10,8 +10,8 @@ interface ITransport{
 	/**
 	 * Reply with a message to clients
 	 * 
-	 * @param unknown_type $message
-	 * @return void
+	 * @param string $message
+	 * @return string
 	 */
 	public function reply($message, $isError = false);
 }

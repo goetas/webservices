@@ -1,5 +1,7 @@
 <?php
 namespace goetas\webservices;
+use goetas\xml\wsdl\Port;
+
 use goetas\webservices\exceptions\UnsuppoportedProtocolException;
 
 use goetas\xml\wsdl\Wsdl;
@@ -10,8 +12,14 @@ class Server extends Base {
 	public function __construct(Wsdl $wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
 	}
-	public function addServerObject($object, $serviceNs = null, $serviceName = null, $servicePort = null) {
-		if(!is_object($object)){
+	public function getProtocol(Port $port) {
+		$this->supportedBindings["http://schemas.xmlsoap.org/wsdl/soap/"] = function(Base $client, Port $port){
+			return new bindings\soap\SoapServer($client, $port);
+		};
+		return parent::getProtocol($port);
+	}
+	public function registerProxyObject($proxy, $serviceNs = null, $serviceName = null, $servicePort = null) {
+		if(!is_object($proxy)){
 			throw new InvalidArgumentException("Invalid object as server object");
 		}
 		if(!$serviceNs){
@@ -24,15 +32,16 @@ class Server extends Base {
 			$ks = array_keys($services[$serviceNs]);
 			$serviceName = reset($ks);
 		}
-		$this->servers[$serviceNs?:"*"][$serviceName?:"*"][$servicePort?:'*']=$object;
+		$this->servers[$serviceNs?:"*"][$serviceName?:"*"][$servicePort?:'*']=$proxy;
 	}
-	public function handle() {
-		$raw = new Message();
-		
-		foreach ($_SERVER as $name=> $value){
-			$raw->setMeta($name, $value);
-		}		
-		$raw->setData(file_get_contents("php://input"));
+	public function handle(Message $raw = null) {
+		if($raw===null){
+			$raw = new Message();
+			foreach ($_SERVER as $name=> $value){
+				$raw->setMeta($name, $value);
+			}		
+			$raw->setData(file_get_contents("php://input"));
+		}
 		
 		$serviceNs = null;
 		$serviceName = null;
@@ -75,7 +84,7 @@ class Server extends Base {
 		
 			$bindingOperation = $protocol->findOperation($port->getBinding(), $raw);
 		
-			$parameters = $protocol->getRequest($bindingOperation, $raw );
+			$parameters = $protocol->getParameters($bindingOperation, $raw );
 					
 			$callable = array($serviceObject, $bindingOperation->getName());
 			if (is_callable($callable)){
@@ -84,18 +93,12 @@ class Server extends Base {
 				if($return!==null){
 					$returnParams[] = $return;
 				}
-				
-				$protocol->reply($bindingOperation, $returnParams );
+				return $protocol->reply($bindingOperation, $returnParams );
 			}else{
 				throw new \Exception("Non trovo nessun il metodo '".$bindingOperation->getName()."' su ".get_class($serviceObject));
 			}	
 		} catch (\Exception $e) {
-			$protocol->handleServerError($e, $port);
+			return $protocol->handleServerError($e, $port);
 		}			
 	}
-	protected function sendHeaders(){
-		//header("Accept-Encoding: gzip, deflate",true);
-		return $this;
-	}
-	
 }

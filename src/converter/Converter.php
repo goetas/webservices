@@ -1,6 +1,8 @@
 <?php
 namespace goetas\webservices\converter;
 
+use goetas\webservices\bindings\soap\Soap;
+
 use goetas\xml\xsd\Type;
 
 use goetas\webservices\Base;
@@ -30,9 +32,14 @@ class Converter{
 	 * @var Base
 	 */
 	protected $client;
+	/**
+	 * @var Soap
+	 */
+	protected $soap;	
 	
-	public function __construct(Base $client) {
+	public function __construct(Base $client, Soap $soap) {
 		$this->client = $client;
+		$this->soap = $soap;
 	}
 
 	protected function getInstance(DOMNode $node, Type $typeDef, $t2) {
@@ -117,7 +124,7 @@ class Converter{
 		
 						$val = $this->getReflectionAttr(self::camelCaseAttr($elementDef->getName()), $data)->getValue($data);
 						if($elementDef->getMin()>0 || $val!==null){
-							$writer->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
+							$writer->startElementNS ( $this->soap->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
 												
 							if($val!==null){
 								$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $writer);
@@ -133,7 +140,7 @@ class Converter{
 		}else{ // array types
 			foreach ($typeDef->getElements() as $elementDef) {
 				foreach ($data as $key => $val){
-					$writer->startElementNS ( $this->client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
+					$writer->startElementNS ( $this->soap->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
 					
 					$this->client->findToXmlMapper($elementDef->getComplexType(), $val, $writer);
 					

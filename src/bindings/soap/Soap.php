@@ -24,7 +24,7 @@ use goetas\xml\XMLDomElement;
 
 use goetas\xml\XMLDom;
 
-class Soap extends Binding{
+abstract class Soap extends Binding{
 	const NS = 'http://schemas.xmlsoap.org/wsdl/soap/';
 	const NS_ENVELOPE = 'http://schemas.xmlsoap.org/soap/envelope/';
 	protected $soapPrefix = 'soap-env';
@@ -66,54 +66,12 @@ class Soap extends Binding{
 		}
 		return parent::getPrefixFor($ns);
 	}
-	/**
-	 * @see goetas\webservices.Binding::findOperation()
-	 * @return \goetas\xml\wsd\BindingOperation
-	 */
-	public function findOperation(WsdlBinding $binding, RawMessage $message){
-		
-		$action = trim($message->getMeta("HTTP_SOAPACTION"), '"');
-		$operationName = $binding->getDomElement()->evaluate("string(//soap:operation[@soapAction='$action']/../@name)", array("soap"=>self::NS));
-		
-		return $binding->getOperation($operationName);
-		
-	}
-	public function getRequest(BindingOperation $bOperation, RawMessage $raw) {
-		$message = $bOperation->getInput();
-		
-		$dom = new XMLDom();
-		$dom->loadXMLStrict($raw->getData());
-		
-		list($heads, $bodys, $env) = $this->envelopeParts($dom);
-				
-		if($message){
-			$useOutput = $this->getEncodingMode($message);
-		}
-
-		$inputParts = $bOperation->getOperation()->getInput()->getParts();
-		$part = reset($inputParts);
-		if($part && $this->isMicrosoftStyle($bOperation)){ // document wrapped hack
-			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
-			$this->client->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
-		}
-
-		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $message->getMessage());
-		return $partsReturned;
-		
-	}
 	protected function isMicrosoftStyle(BindingOperation $bOperation) {
 		$parts = $bOperation->getInput()->getMessage()->getParts();
 		
 		$part = reset($parts);
 		
 		return count($parts)==1 && $part && $part->isElement() && $part->getElement()->getName() == $bOperation->getName();
-	}
-	public function reply(BindingOperation $bOperation,  array $params) {
-		$outMessage = $bOperation->getOutput();
-		
-		$xml = $this->buildXMLMessage($bOperation, $outMessage, $params);
-		
-		$this->transport->reply($xml);
 	}
 	protected function buildXMLMessage(BindingOperation $bOperation, BindingMessage $message, array $params) {
 		$style = $this->getStyleMode($bOperation);
@@ -149,81 +107,13 @@ class Soap extends Binding{
 		$xml->endElement();//Envelope
 		return $xml->outputMemory(false);
 	}
-	public function handleServerError(\Exception $exception){
-		$xml = new \XMLWriter();
-		$xml->openMemory();
-		$xml->startElementNS ( $this->soapPrefix , 'Envelope' , self::NS_ENVELOPE );
-
-		
-		$xml->startElementNS ( $this->soapPrefix , 'Body' , null );
-		
-		$xml->startElementNS ( $this->soapPrefix , 'Fault' , null );
-		$xml->writeAttribute("xmlns", '');
-			
-			$xml->startElement(  'faultcode' );
-			$xml->text (  $exception->getCode()?:"SOAP-ENV:Server" );
-			$xml->endElement();
-			
-			$xml->startElement ( 'faultstring'  );
-			$xml->text (  $exception->getMessage()?:"no-secription" );
-			$xml->endElement();
-			
-		$xml->endElement();//Fault
-		$xml->endElement();//Body
-		$xml->endElement();//Envelope
-		$this->transport->reply($xml->outputMemory(false), true);
-	}
-	public function send(BindingOperation $bOperation, array $params) {
-
-		$inputMessage = $bOperation->getInput();
-		$outMessage = $bOperation->getOutput();
-		
-		$soapAction = $bOperation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>self::NS));
-		$this->transport->setAction($soapAction);
-		
-		
-		$xml = $this->buildXMLMessage($bOperation, $inputMessage, $params);
 	
-		$response = $this->transport->send($xml);
-		
-	
-		try {
-			$retDoc = new \goetas\xml\XMLDom();
-			$retDoc->loadXMLStrict($response);	
-		} catch (\DOMException $e) {
-			throw new \Exception("Wrong Response, expected XML. Found ".substr($response, 0,2000), 100, $e);
-		}
-		
-		list($heads, $bodys, $env) = $this->envelopeParts($retDoc);
-				
-		if($outMessage){
-			$useOutput = $this->getEncodingMode($outMessage);
-		}
-		
-		if($this->isMicrosoftStyle($bOperation)){ // document wrapped hack
-			$outputParts = $bOperation->getOperation()->getOutput()->getParts();
-		
-			$part = reset($outputParts);
-		
-			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
-			
-			$this->client->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
-		}
-
-		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $outMessage->getMessage());
-
-		if(count($partsReturned)==1){
-			return reset($partsReturned);
-		}
-		return $partsReturned;
-		
-	}
 	public function toXmlMicrosoftMapper($typeDef, $data, $xml, $client){
 		$c = 0;
 		foreach ($typeDef->getElements() as $elementDef) {
 			$val = $data;
 			if($elementDef->getMin()>0 || $val!==null){
-				$xml->startElementNS ( $client->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
+				$xml->startElementNS ( $this->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
 									
 				if($val!==null){
 					$client->findToXmlMapper($elementDef->getComplexType(), $val, $xml);
@@ -301,7 +191,7 @@ class Soap extends Binding{
 		$this->client->findToXmlMapper($typeDef, $data , $xml );
 		$xml->endElement();
 	}
-	public function decodeParameter(XMLDomElement $srcNode, BindingOperation $bOperation, MessagePart $message){
+	public function decodeParameter($srcNode, BindingOperation $bOperation, MessagePart $message){
 		
 		list($ns, $typeName) = $this->getMessageTypeAndNs($message);
 
@@ -334,9 +224,6 @@ class Soap extends Binding{
 		}		
 		return $ret;
 	}
-	public function createFault($faultcode, $faultstring, $faultactor=null, $detail=null, $faultname=null) {
-		
-	}
 	protected function checkIsFault(XMLDomElement $node) {
 		$faultcode= $faultstring = $faultactor = $detail = $faultname = null;
 		if($node->localName=="Fault" && $node->namespaceURI == self::NS_ENVELOPE){
@@ -348,23 +235,4 @@ class Soap extends Binding{
 			throw new SoapFault($faultcode, $faultstring, $faultactor, $detail, $faultname);
 		}
 	}	
-
-	protected function envelopeParts(XMLDom $doc) {
-		$nodes = $doc->query("/{$this->soapPrefix}:Envelope|/{$this->soapPrefix}:Envelope/{$this->soapPrefix}:Header|/{$this->soapPrefix}:Envelope/{$this->soapPrefix}:Body", array($this->soapPrefix=>self::NS_ENVELOPE));
-		foreach ($nodes as $node){
-			switch ($node->localName) {
-				case "Envelope":
-					$env = $node;
-				break;
-				case "Header":
-					$head = $node->childNodes;
-				break;
-				case "Body":
-					$body = $node->childNodes;
-				break;
-			}
-		}
-		return array($head, $body, $env, $doc);
-		
-	}
 }
