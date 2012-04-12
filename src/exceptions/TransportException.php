@@ -1,5 +1,5 @@
 <?php
-namespace goetas\webservices\bindings\soap;
+namespace goetas\webservices\exceptions;
 use Exception;
 class TransportException extends Exception{
 }

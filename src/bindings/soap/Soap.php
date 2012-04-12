@@ -1,6 +1,8 @@
 <?php 
 namespace goetas\webservices\bindings\soap;
 
+use goetas\webservices\exceptions\UnsuppoportedTransportException;
+
 use goetas\webservices\bindings\xml\XmlDataMappable;
 
 use goetas\webservices\bindings\xml\Converter\Converter;
@@ -11,7 +13,6 @@ use goetas\xml\xsd\SchemaContainer;
 
 use goetas\webservices\Base;
 
-use goetas\webservices\bindings\soap\UnsuppoportedTransportException;
 use goetas\webservices\Binding;
 use goetas\webservices\Client;
 use goetas\xml\wsdl\BindingOperation;

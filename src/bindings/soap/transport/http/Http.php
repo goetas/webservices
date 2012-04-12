@@ -2,7 +2,7 @@
 namespace goetas\webservices\bindings\soap\transport\http;
 use goetas\webservices\Message;
 
-use goetas\webservices\bindings\soap\TransportException;
+use goetas\webservices\exceptions\TransportException;
 use goetas\xml\XMLDom;
 use InvalidArgumentException;
 
@@ -149,7 +149,6 @@ class Http implements ISoapTransport{
             curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
         }
 
-        
         $this->checkCompression($message, $headers);
         
         curl_setopt($ch, CURLOPT_POSTFIELDS, $message);
