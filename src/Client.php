@@ -17,19 +17,16 @@ class Client extends Base {
 	public function __construct(Wsdl $wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
 
-		$this->proxies["*"]["*"]["*"]=function($client, $port, $protocol){
+
+		$this->registerProxyObject(function($client, $port, $protocol){
 			return new ClientProxy($client, $port, $protocol);
-		};
-	}
-	/*
-	 * @return IClientBinding
-	 */
-	public function getProtocol(Port $port) {
-		$this->supportedBindings["http://schemas.xmlsoap.org/wsdl/soap/"] = function(Base $client, Port $port){
+		});
+		
+		$this->addProtocol("http://schemas.xmlsoap.org/wsdl/soap/", function(Base $client, Port $port){
 			return new bindings\soap\SoapClient($client, $port);
-		};
-		return parent::getProtocol($port);
+		});
 	}
+
 	public function registerProxyObject($proxy, $serviceNs=null, $serviceName=null, $servicePort=null ) {
 		if(!is_callable($proxy)){
 			throw new InvalidArgumentException("Invalid callback as proxy");

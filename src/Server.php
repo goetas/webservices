@@ -11,12 +11,11 @@ class Server extends Base {
 	protected $servers = array();
 	public function __construct(Wsdl $wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
-	}
-	public function getProtocol(Port $port) {
-		$this->supportedBindings["http://schemas.xmlsoap.org/wsdl/soap/"] = function(Base $client, Port $port){
+		
+		
+		$this->addProtocol("http://schemas.xmlsoap.org/wsdl/soap/", function(Base $client, Port $port){
 			return new bindings\soap\SoapServer($client, $port);
-		};
-		return parent::getProtocol($port);
+		});
 	}
 	public function registerProxyObject($proxy, $serviceNs = null, $serviceName = null, $servicePort = null) {
 		if(!is_object($proxy)){

@@ -1,6 +1,14 @@
 <?php 
 namespace goetas\webservices\bindings\soap;
 
+use goetas\webservices\bindings\xml\XmlDataMappable;
+
+use goetas\webservices\bindings\xml\Converter\Converter;
+
+use goetas\webservices\IBinding;
+
+use goetas\xml\xsd\SchemaContainer;
+
 use goetas\webservices\Base;
 
 use goetas\webservices\bindings\soap\UnsuppoportedTransportException;
@@ -24,30 +32,52 @@ use goetas\xml\XMLDomElement;
 
 use goetas\xml\XMLDom;
 
-abstract class Soap extends Binding{
+abstract class Soap extends XmlDataMappable implements IBinding{
 	const NS = 'http://schemas.xmlsoap.org/wsdl/soap/';
 	const NS_ENVELOPE = 'http://schemas.xmlsoap.org/soap/envelope/';
-	protected $soapPrefix = 'soap-env';
-
 	/**
 	 * @var ISoapTransport
 	 */
 	protected $transport;
 	protected $supportedTransports = array();
-	public function __construct(Base $client, Port $port) {
-		parent::__construct($client, $port);
-		$this->soapPrefix = $this->getPrefixFor(self::NS_ENVELOPE);
+
+	/**
+	 * @var Port
+	 */
+	protected $port;
+	/**
+	 * @var Base
+	 */
+	protected $client;
+	/**
+	 * @var SchemaContainer
+	 */
+	protected $container;
+
+	public function __construct(Base $base, Port $port) {
+		parent::__construct();
+		$this->port = $port;
+		$this->client = $base;
+		$this->container = new SchemaContainer();
+		$this->container->addFinder(array($base->getWsdl(), 'getSchemaNode'));	
 	
 		$this->transport = $this->getTransport($this->port->getBinding());
 		
 		$uri = $port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>self::NS));
 		
-		if($uriAlternative = $client->getOption('wsdl.port.'.$port->getName(), 'location')){
+		if($uriAlternative = $base->getOption('wsdl.port.'.$port->getName(), 'location')){
 			$this->transport->setUri($uriAlternative);
 		}else{
 			$this->transport->setUri($uri);
 		}		
 	}
+	
+	protected function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
+		foreach ($message->getParts() as $part){
+			$this->encodeParameter($xml, $operation, $part, array_shift($params));
+		}		
+	}	
+	
 	protected function getTransport(WsdlBinding $binding) {
 		$ns = $binding->getDomElement()->evaluate("string(soap:binding/@transport)", array("soap"=>self::NS));
 		
@@ -60,12 +90,14 @@ abstract class Soap extends Binding{
 		}
 		throw new UnsuppoportedTransportException("Nessun trasporto compatibile con $ns");
 	}
+	
 	public function getPrefixFor($ns) {
-		if(self::NS_ENVELOPE === $ns){
-			return 'SOAP-ENV';
+		if(self::NS_ENVELOPE === $ns && !isset($this->prefixes[$ns])){
+			$this->prefixes[$ns] = "SOAP-ENV";
 		}
 		return parent::getPrefixFor($ns);
 	}
+
 	protected function isMicrosoftStyle(BindingOperation $bOperation) {
 		$parts = $bOperation->getInput()->getMessage()->getParts();
 		
@@ -80,9 +112,9 @@ abstract class Soap extends Binding{
 			
 		$xml = new \XMLWriter();
 		$xml->openMemory();
-		$xml->startElementNS ( $this->soapPrefix , 'Envelope' , self::NS_ENVELOPE );
+		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Envelope' , self::NS_ENVELOPE );
 		
-		$xml->startElementNS ( $this->soapPrefix , 'Body' , null );
+		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Body' , null );
 
 		if($style=="rpc"){
 			$xml->startElementNS ( $this->getPrefixFor($bOperation->getOperation()->getNs()) , $bOperation->getName() , $bOperation->getOperation()->getNs());
@@ -98,7 +130,7 @@ abstract class Soap extends Binding{
 
 				$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
 				
-				$this->client->addToXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'toXmlMicrosoftMapper'));
+				$this->addToXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'toXmlMicrosoftMapper'));
 			}
 			
 			$this->buildMessage( $xml, $bOperation,  $message->getMessage(), $params);		
@@ -108,7 +140,7 @@ abstract class Soap extends Binding{
 		return $xml->outputMemory(false);
 	}
 	
-	public function toXmlMicrosoftMapper($typeDef, $data, $xml, $client){
+	protected function toXmlMicrosoftMapper($typeDef, $data, $xml, Soap $client){
 		$c = 0;
 		foreach ($typeDef->getElements() as $elementDef) {
 			$val = $data;
@@ -125,7 +157,7 @@ abstract class Soap extends Binding{
 		}
 		
 	}
-	public function formXmlMicrosoftMapper($typeDef, $node, Base $client){
+	protected function formXmlMicrosoftMapper($typeDef, $node, Soap $client){
 				
 		$elementsDef = $typeDef->getElements();
 		$ret = array();
@@ -170,7 +202,26 @@ abstract class Soap extends Binding{
 		}
 		return $style;
 	}
-	
+	protected function getMessageTypeAndNs(MessagePart $message) {
+		if($message->isType()){
+			$typeName = $message->getType()->getName();
+			$ns = $message->getType()->getNs();
+		}else{
+			$typeName = $message->getElement()->getName();
+			$ns = $message->getElement()->getNs();
+		}
+		return array($ns, $typeName);
+	}
+	public function addGenericMapper(Base $base) {
+		$conv  = new Converter($base, $this);
+				
+		$base->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
+			return $conv->toXml($data, $node, $typeDef);
+		}); 
+		$base->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
+			return $conv->fromXml($node, $typeDef);
+		});
+	}		
 	
 	public function encodeParameter($xml, BindingOperation $bOperation, MessagePart $message, $data){
 		
@@ -188,7 +239,7 @@ abstract class Soap extends Binding{
 		}else{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
-		$this->client->findToXmlMapper($typeDef, $data , $xml );
+		$this->findToXmlMapper($typeDef, $data , $xml );
 		$xml->endElement();
 	}
 	public function decodeParameter($srcNode, BindingOperation $bOperation, MessagePart $message){
@@ -201,7 +252,7 @@ abstract class Soap extends Binding{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
 		
-		return $this->client->findFromXmlMapper($typeDef, $srcNode);
+		return $this->findFromXmlMapper($typeDef, $srcNode);
 	}
 	protected function decodeMessage($nodes, BindingOperation $bOperation, Message $message) {
 		$ret = array();	

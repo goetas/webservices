@@ -7,15 +7,16 @@ use goetas\xml\wsdl\Port;
 use goetas\webservices\bindings;
 
 use goetas\webservices\converter\Converter;
-class Base extends DataMappable{
+
+abstract class Base {
 	/**
 	 * @var Wsdl
 	 */
 	protected $wsdl;
 	protected $options = array();
+	protected $supportedBindings = array();
 	
 	public function __construct(Wsdl $wsdl, array $options =array()) {
-		parent::__construct();
 		$this->wsdl = $wsdl;
 		$this->options = $options;
 		
@@ -36,6 +37,23 @@ class Base extends DataMappable{
 		return $this->wsdl;
 	}
 	/**
+	 * @param Port $port
+	 * @throws UnsuppoportedProtocolException
+	 * @return IBinding
+	 */
+	public function getProtocol(Port $port) {
+		foreach ($this->supportedBindings as $ns => $callback) {
+			if($port->getDomElement()->query("//*[namespace-uri()='$ns']")->length){
+				return call_user_func($callback, $this, $port);
+			}
+		}
+		throw new UnsuppoportedProtocolException("Nessun protocolo compatibile");
+	}
+	public function addProtocol($ns, $callable) {
+		$this->supportedBindings[$ns] = $callable;
+	}
+	
+	/**
 	 * limita un problema di PHP, ovvero la possibilta ritirare proprieta non definite nella classe
 	 */
 	public function __get($p){
@@ -46,17 +64,6 @@ class Base extends DataMappable{
 	 */
 	public function __set($p,$v){
 		throw new \Exception("proprietà {$p} non definita in ".get_class($this));
-	}
-	protected $supportedBindings = array();
-	public function getProtocol(Port $port) {
-		foreach ($this->supportedBindings as $ns => $callback) {
-			if($port->getDomElement()->query("//*[namespace-uri()='$ns']")->length){
-				$binding = call_user_func($callback, $this, $port);
-				$binding->addGenericMapper($this);
-				return $binding;
-			}
-		}
-		throw new UnsuppoportedProtocolException("Nessun protocolo compatibile");
 	}
 }
 

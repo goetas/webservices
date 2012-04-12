@@ -65,7 +65,7 @@ class SoapClient extends Soap implements IClientBinding{
 		
 			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
 			
-			$this->client->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
+			$this->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
 		}
 
 		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $outMessage->getMessage());
@@ -77,7 +77,12 @@ class SoapClient extends Soap implements IClientBinding{
 		
 	}
 	protected function envelopeParts(XMLDom $doc) {
-		$nodes = $doc->query("/{$this->soapPrefix}:Envelope|/{$this->soapPrefix}:Envelope/{$this->soapPrefix}:Header|/{$this->soapPrefix}:Envelope/{$this->soapPrefix}:Body", array($this->soapPrefix=>self::NS_ENVELOPE));
+		$prefix = $this->getPrefixFor(self::NS_ENVELOPE);
+		$nodes = $doc->query("
+		/{$prefix}:Envelope|
+		/{$prefix}:Envelope/{$prefix}:Header|
+		/{$prefix}:Envelope/{$prefix}:Body
+		", array($prefix=>self::NS_ENVELOPE));
 		foreach ($nodes as $node){
 			switch ($node->localName) {
 				case "Envelope":

@@ -26,7 +26,7 @@ use goetas\xml\XMLDomElement;
 
 use goetas\xml\XMLDom;
 
-class SoapServer extends SoapClient implements IServerBinding{
+class SoapServer extends Soap implements IServerBinding{
 	public function getParameters(BindingOperation $bOperation, RawMessage $raw) {
 		$message = $bOperation->getInput();
 		
@@ -43,7 +43,7 @@ class SoapServer extends SoapClient implements IServerBinding{
 		$part = reset($inputParts);
 		if($part && $this->isMicrosoftStyle($bOperation)){ // document wrapped hack
 			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
-			$this->client->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
+			$this->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
 		}
 
 		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $message->getMessage());
@@ -72,12 +72,12 @@ class SoapServer extends SoapClient implements IServerBinding{
 	public function handleServerError(\Exception $exception){
 		$xml = new \XMLWriter();
 		$xml->openMemory();
-		$xml->startElementNS ( $this->soapPrefix , 'Envelope' , self::NS_ENVELOPE );
+		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Envelope' , self::NS_ENVELOPE );
 
 		
-		$xml->startElementNS ( $this->soapPrefix , 'Body' , null );
+		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Body' , null );
 		
-		$xml->startElementNS ( $this->soapPrefix , 'Fault' , null );
+		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Fault' , null );
 		$xml->writeAttribute("xmlns", '');
 			
 			$xml->startElement(  'faultcode' );
