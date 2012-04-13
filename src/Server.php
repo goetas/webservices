@@ -33,6 +33,11 @@ class Server extends Base {
 		}
 		$this->servers[$serviceNs?:"*"][$serviceName?:"*"][$servicePort?:'*']=$proxy;
 	}
+	/**
+	 * @param Message $raw
+	 * @throws \Exception
+	 * @return goetas\webservices\Message
+	 */
 	public function handle(Message $raw = null) {
 		if($raw===null){
 			$raw = new Message();

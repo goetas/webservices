@@ -112,6 +112,8 @@ abstract class XmlDataMappable {
 				$writer->text($data->format("Y-m-d"));
 			}elseif(is_numeric($data)){
 				$writer->text(date("Y-m-d", $data));
+			}elseif(is_string($data) && ($t = strtotime($data))!==false){
+				$writer->text(date("Y-m-d", $t));				
 			}else{
 				throw new \InvalidArgumentException("Tipo di variabile per XSD:'date' non valido (".(gettype($data)!=='object'?:get_class($data)).")");	
 			}
@@ -134,8 +136,8 @@ abstract class XmlDataMappable {
 		
 	}
 	
-	public function findToXmlMapper(XSDBase $typeDef, $data, $writer) {
-		
+	public function findToXmlMapper(XSDBase $typeDef, $data, $writer) {	
+
 		$ns = $typeDef->getNs();
 		$type = $typeDef->getName();
 		

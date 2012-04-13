@@ -27,6 +27,7 @@ class ClientProxy {
 		$this->binding = $binding;
 	}
 	public function __call($method, $params) {
+
 		$bindingOperation = $this->binding->findOperation($this->port->getBinding(), $method, $params);
 		return $this->binding->send($bindingOperation, $params);
 	}

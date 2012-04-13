@@ -39,9 +39,9 @@ class SoapClient extends Soap implements IClientBinding{
 		$soapAction = $bOperation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>self::NS));
 		$this->transport->setAction($soapAction);
 		
-		
+
 		$xml = $this->buildXMLMessage($bOperation, $inputMessage, $params);
-	
+
 		$response = $this->transport->send($xml);
 		
 	
@@ -74,29 +74,6 @@ class SoapClient extends Soap implements IClientBinding{
 			return reset($partsReturned);
 		}
 		return $partsReturned;
-		
-	}
-	protected function envelopeParts(XMLDom $doc) {
-		$prefix = $this->getPrefixFor(self::NS_ENVELOPE);
-		$nodes = $doc->query("
-		/{$prefix}:Envelope|
-		/{$prefix}:Envelope/{$prefix}:Header|
-		/{$prefix}:Envelope/{$prefix}:Body
-		", array($prefix=>self::NS_ENVELOPE));
-		foreach ($nodes as $node){
-			switch ($node->localName) {
-				case "Envelope":
-					$env = $node;
-				break;
-				case "Header":
-					$head = $node->childNodes;
-				break;
-				case "Body":
-					$body = $node->childNodes;
-				break;
-			}
-		}
-		return array($head, $body, $env, $doc);
 		
 	}
 }

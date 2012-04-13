@@ -116,7 +116,7 @@ class Http implements ISoapTransport{
 	 * @return XMLDom
 	 */
 	public function send($message){
-
+		
 		$ch = curl_init($this->getUri());
 
         if (isset($this->options['proxy_host'])) {
@@ -320,6 +320,8 @@ class Http implements ISoapTransport{
     	if($isError){
     		$response->setMeta("HTTP/1.1 500 Internal Server Error"); 
     	}
+    	$response->setData($message);
+    	
     	return $response;
     }
 }

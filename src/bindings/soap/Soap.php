@@ -72,7 +72,28 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$this->transport->setUri($uri);
 		}		
 	}
-	
+	protected function envelopeParts(XMLDom $doc) {
+		$prefix = $this->getPrefixFor(self::NS_ENVELOPE);
+		$nodes = $doc->query("
+		/{$prefix}:Envelope|
+		/{$prefix}:Envelope/{$prefix}:Header|
+		/{$prefix}:Envelope/{$prefix}:Body
+		", array($prefix=>self::NS_ENVELOPE));
+		foreach ($nodes as $node){
+			switch ($node->localName) {
+				case "Envelope":
+					$env = $node;
+				break;
+				case "Header":
+					$head = $node->childNodes;
+				break;
+				case "Body":
+					$body = $node->childNodes;
+				break;
+			}
+		}
+		return array($head, $body, $env, $doc);
+	}
 	protected function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
 		foreach ($message->getParts() as $part){
 			$this->encodeParameter($xml, $operation, $part, array_shift($params));

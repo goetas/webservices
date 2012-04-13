@@ -9,6 +9,9 @@ class Message {
 	public function setMeta($name, $value = null){
 		$this->meta[$name] = $value;
 	}
+	public function getMetadata() {
+		return $this->meta;
+	}
 	public function getData(){
 		return $this->data;
 	}

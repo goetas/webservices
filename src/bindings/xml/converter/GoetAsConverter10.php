@@ -72,12 +72,14 @@ class GoetAsConverter10 {
 		
 			"http://www.mercuriosistemi.com/building-rental"=>'\mercurio\buildingrental',
 		
+			"http://www.mercuriosistemi.com/hotel-service"=>'\mercurio\hotel\HotelDataBundle\Entity',
+		
 			"http://samples.soamoa.yesso.eu/"=>"\\soamoa\\yesso",
 			"http://tempuri.org/"=>"\\hunderttausend\\flickr",
 		);
 		return rtrim($namesapceAlias[$ns],"\\");
 	}
-	protected function isArray($typdef) {
+	protected function isArray(Type $typdef, $print = 0) {
 		$ns = $typdef->getNs();
 		$name = $typdef->getName();
 		$arrayTypes = array(
@@ -86,6 +88,7 @@ class GoetAsConverter10 {
 		if($arrayTypes["$ns $name"] || strpos($name, "ArrayOf")===0){
 			return true;
 		}
+		return false;
 	}
 	public function toXml($data, \XMLWriter $writer, Type $typeDef) {
 
@@ -118,7 +121,14 @@ class GoetAsConverter10 {
 
 					foreach ($typeDef->getElements() as $elementDef) {
 						if(!$data) continue;
-		
+						
+						if(!is_object($data)){
+							var_dump($this->isArray($typeDef,1));
+							die();
+							throw new \Exception("data is ".gettype($data)." expected object ".$elementDef->getName()."{".$elementDef->getNs()."} in " .$typeDef->getName()."{".$typeDef->getNs()."}" );
+						}
+						
+						
 						$val = $this->getReflectionAttr(self::camelCaseAttr($elementDef->getName()), $data)->getValue($data);
 						if($elementDef->getMin()>0 || $val!==null){
 							$writer->startElementNS ( $this->soap->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
@@ -166,7 +176,7 @@ class GoetAsConverter10 {
 			try {
 				throw new \Exception("xxxx");	
 			} catch (\Exception $e) {
-				print_r($obj);
+				//print_r($obj);
 				die($e);
 			}
 		}
