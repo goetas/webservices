@@ -95,6 +95,11 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		return array($head, $body, $env, $doc);
 	}
 	protected function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
+		
+		if(count($params)!=count($message->getParts())){
+			throw new \Exception(sprintf("I parametri richiesti per l'operazione '%s' sono %d, ma ne sono stati forniti %d", $operation->getName(), count($message->getParts()), count($params)));
+		}
+
 		foreach ($message->getParts() as $part){
 			$this->encodeParameter($xml, $operation, $part, array_shift($params));
 		}		
