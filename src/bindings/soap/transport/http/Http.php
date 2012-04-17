@@ -83,10 +83,6 @@ class Http implements ISoapTransport{
                 return $this->_parseResponse();
             case 200:
             case 202:
-                if (!strlen($this->incoming_payload)) {
-                    /* Valid one-way message response. */
-                    return true;
-                }
                 break;
             case 400:
                 throw new TransportException("HTTP Response $code Bad Request");
