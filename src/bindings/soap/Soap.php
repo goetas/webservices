@@ -93,7 +93,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		return array($head, $body, $env, $doc);
 	}
 	protected function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
-				
+		
 		if(count($params)!=count($message->getParts())){
 			throw new \Exception(sprintf("I parametri richiesti per l'operazione '%s' sono %d, ma ne sono stati forniti %d", $operation->getName(), count($message->getParts()), count($params)));
 		}
@@ -132,7 +132,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 	}
 	protected function buildXMLMessage(BindingOperation $bOperation, BindingMessage $message, array $params) {
 		$style = $this->getStyleMode($bOperation);
-			
+
 		$xml = new \XMLWriter();
 		$xml->openMemory();
 		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Envelope' , self::NS_ENVELOPE );
@@ -171,7 +171,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 				$xml->startElementNS ( $this->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
 									
 				if($val!==null){
-					$client->findToXmlMapper('literal', $elementDef->getComplexType(), $val, $xml);
+					$client->findToXmlMapper($elementDef->getComplexType(), $val, $xml);
 				}elseif ($elementDef->getMin()>0  && $elementDef->isNillable()){
 					$xml->writeAttributeNs('xsi', 'nil', self::NS_XSI, 'true');
 				}
@@ -197,7 +197,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 					throw new \Exception("Manca la definizione {{$element->namespaceURI}}{$element->localName}");
 				}
 
-				$ret[] = $client->findFromXmlMapper('literal',$elementDef->getComplexType(), $element);
+				$ret[] = $client->findFromXmlMapper($elementDef->getComplexType(), $element);
 
 			}
 		}
@@ -235,16 +235,26 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		}
 		return array($ns, $typeName);
 	}
-	public function encodeParameter($xml, BindingOperation $bOperation, MessagePart $message, $data){
-	
-		$use = $this->getEncodingMode($bOperation->getInput());
+	public function addGenericMapper(Base $base) {
+		$conv  = new Converter($base, $this);
 				
+		$base->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
+			return $conv->toXml($data, $node, $typeDef);
+		}); 
+		$base->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
+			return $conv->fromXml($node, $typeDef);
+		});
+	}		
+	
+	public function encodeParameter($xml, BindingOperation $bOperation, MessagePart $message, $data){
+		
 		list($ns, $typeName) = $this->getMessageTypeAndNs($message);
 		if($message->isElement() &&  $this->getStyleMode($bOperation)=="document"){
 			$prefix = $this->getPrefixFor($ns);
 			$xml->startElementNS ( $prefix , $typeName, $ns);
 		}else{
-			$xml->startElement ($message->getName());
+			//$nodo = $destNode->addChild($message->getName()); // parameter nave to be namespaced? //$nodo = $destNode->addChildNs($ns, $prefix.":".$message->getName());
+			$xml->startElement( $message->getName());
 		}
 		
 		if($message->isElement()){
@@ -252,12 +262,10 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		}else{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
-		$this->findToXmlMapper($use, $typeDef, $data , $xml );
+		$this->findToXmlMapper($typeDef, $data , $xml );
 		$xml->endElement();
 	}
 	public function decodeParameter($srcNode, BindingOperation $bOperation, MessagePart $message){
-		
-		$use = $this->getEncodingMode($bOperation->getOutput());
 		
 		list($ns, $typeName) = $this->getMessageTypeAndNs($message);
 
@@ -267,7 +275,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
 		
-		return $this->findFromXmlMapper($use, $typeDef, $srcNode);
+		return $this->findFromXmlMapper($typeDef, $srcNode);
 	}
 	protected function decodeMessage($nodes, BindingOperation $bOperation, Message $message) {
 		$ret = array();	
