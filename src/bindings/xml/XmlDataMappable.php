@@ -1,6 +1,8 @@
 <?php
 namespace goetas\webservices\bindings\xml;
 
+use goetas\webservices\bindings\xml\converter\GoetAsRpcEncodedConverter10;
+
 use goetas\webservices\bindings\xml\converter\GoetAsConverter10;
 
 use goetas\xml\xsd\ComplexElement;
@@ -35,14 +37,21 @@ abstract class XmlDataMappable {
 		$this->addGoetasMapping();
 	}
 	public function addGoetasMapping() {
+		/*
 		$conv  = new GoetAsConverter10($this);
 				
 		$this->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
 			return $conv->toXml($data, $node, $typeDef);
-		}); 
+		}, "*", "literal"); 
 		$this->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
 			return $conv->fromXml($node, $typeDef);
-		});
+		}, "*", "literal");
+		*/
+		$conv  = new GoetAsRpcEncodedConverter10($this);
+	
+		$this->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
+			return $conv->toXml($data, $node, $typeDef);
+		}, "*", "encoded"); 
 	}
 	public function getPrefixFor($ns) {
 		if(!isset($this->prefixes[$ns])){
@@ -136,7 +145,9 @@ abstract class XmlDataMappable {
 		
 	}
 	
-	public function findToXmlMapper(XSDBase $typeDef, $data, $writer) {	
+	
+	
+	public function findToXmlMapper($use, XSDBase $typeDef, $data, $writer) {	
 
 		$ns = $typeDef->getNs();
 		$type = $typeDef->getName();
@@ -144,18 +155,18 @@ abstract class XmlDataMappable {
 		if(isset($this->mappers[$ns][$type]["to"])){
 			return call_user_func($this->mappers[$ns][$type]["to"], $typeDef, $data, $writer, $this);
 		}
-	
-		if(isset($this->genericMappers[$ns]["to"])){
-			foreach (array_reverse($this->genericMappers[$ns]["to"]) as $m){
+		if(isset($this->genericMappers[$ns][$use]["to"])){
+			foreach (array_reverse($this->genericMappers[$ns][$use]["to"]) as $m){
 				try {
 					return call_user_func($m, $typeDef, $data, $writer, $this);
 				} catch (ConversionNotFoundException $e) {
 				}
 			}
 		}
-		if(isset($this->genericMappers["*"]["to"])){
+
+		if(isset($this->genericMappers["*"][$use]["to"])){
 			
-			foreach (array_reverse($this->genericMappers["*"]["to"]) as $m){
+			foreach (array_reverse($this->genericMappers["*"][$use]["to"]) as $m){
 				try {
 					return call_user_func($m, $typeDef, $data, $writer,  $this);
 				} catch (ConversionNotFoundException $e) {
@@ -168,7 +179,7 @@ abstract class XmlDataMappable {
 	/**
 	 * @return mixed
 	 */
-	public function findFromXmlMapper($typeDef, $node) {
+	public function findFromXmlMapper($use, $typeDef, $node) {
 
 		$ns = $typeDef->getNs();
 		$type = $typeDef->getName();
@@ -176,7 +187,7 @@ abstract class XmlDataMappable {
 		if(isset($this->mappers[$ns][$type]["from"])){
 			return call_user_func($this->mappers[$ns][$type]["from"], $typeDef ,$node, $this);
 		}
-		if(isset($this->genericMappers[$ns]["from"])){
+		if(isset($this->genericMappers[$ns][$use]["from"])){
 			foreach (array_reverse($this->genericMappers[$ns]["from"]) as $m){
 				try {
 					return call_user_func($m,$typeDef ,$node, $this);
@@ -185,8 +196,8 @@ abstract class XmlDataMappable {
 				}
 			}
 		}
-		if(isset($this->genericMappers["*"]["from"])){
-			foreach (array_reverse($this->genericMappers["*"]["from"]) as $m){
+		if(isset($this->genericMappers["*"][$use]["from"])){
+			foreach (array_reverse($this->genericMappers["*"][$use]["from"]) as $m){
 				try {
 					return call_user_func($m, $typeDef ,$node, $this);
 				} catch (ConversionNotFoundException $e) {
@@ -210,16 +221,17 @@ abstract class XmlDataMappable {
 		$this->mappers[$ns][$type]["from"] = $callback;
 	}
 	
-	public function addToXmlGenericMapper($callback, $ns="*"){
+	
+	public function addToXmlGenericMapper($callback, $ns="*", $use = "*"){
 		if(!is_callable($callback)){
 			throw new InvalidArgumentException("Callback non valida");
 		}
-		$this->genericMappers[$ns]["to"][] = $callback;
+		$this->genericMappers[$ns][$use]["to"][] = $callback;
 	}
-	public function addFromXmlGenericMapper($callback, $ns = "*"){
+	public function addFromXmlGenericMapper($callback, $ns = "*", $use = "*"){
 		if(!is_callable($callback)){
 			throw new InvalidArgumentException("Callback non valida");
 		}
-		$this->genericMappers[$ns]["from"][] = $callback;
+		$this->genericMappers[$ns][$use]["from"][] = $callback;
 	}
 }

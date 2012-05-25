@@ -5,8 +5,6 @@ use goetas\webservices\exceptions\UnsuppoportedTransportException;
 
 use goetas\webservices\bindings\xml\XmlDataMappable;
 
-use goetas\webservices\bindings\xml\Converter\Converter;
-
 use goetas\webservices\IBinding;
 
 use goetas\xml\xsd\SchemaContainer;
@@ -95,7 +93,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		return array($head, $body, $env, $doc);
 	}
 	protected function buildMessage($xml, BindingOperation $operation, Message $message, array $params){
-		
+				
 		if(count($params)!=count($message->getParts())){
 			throw new \Exception(sprintf("I parametri richiesti per l'operazione '%s' sono %d, ma ne sono stati forniti %d", $operation->getName(), count($message->getParts()), count($params)));
 		}
@@ -130,12 +128,10 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		
 		$part = reset($parts);
 		
-		return count($parts)==1 && $part && $part->isElement() && $part->getElement()->getName() == $bOperation->getName();
+		return count($parts)==1 && $part && $part->isElement() && $part->getElement()->getName() == $bOperation->getName() && $this->getEncodingMode($bOperation)=="literal";
 	}
 	protected function buildXMLMessage(BindingOperation $bOperation, BindingMessage $message, array $params) {
 		$style = $this->getStyleMode($bOperation);
-
-		$useInput = $this->getEncodingMode($bOperation->getInput());
 			
 		$xml = new \XMLWriter();
 		$xml->openMemory();
@@ -175,7 +171,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 				$xml->startElementNS ( $this->getPrefixFor($elementDef->getNs()) , $elementDef->getName(), null);
 									
 				if($val!==null){
-					$client->findToXmlMapper($elementDef->getComplexType(), $val, $xml);
+					$client->findToXmlMapper('literal', $elementDef->getComplexType(), $val, $xml);
 				}elseif ($elementDef->getMin()>0  && $elementDef->isNillable()){
 					$xml->writeAttributeNs('xsi', 'nil', self::NS_XSI, 'true');
 				}
@@ -201,7 +197,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 					throw new \Exception("Manca la definizione {{$element->namespaceURI}}{$element->localName}");
 				}
 
-				$ret[] = $client->findFromXmlMapper($elementDef->getComplexType(), $element);
+				$ret[] = $client->findFromXmlMapper('literal',$elementDef->getComplexType(), $element);
 
 			}
 		}
@@ -223,7 +219,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 	}
 	
 	protected function getEncodingMode(BindingMessage $message) {
-		$style = $message->getDomElement()->evaluate("string(soap:boby/@use)", array("soap"=>self::NS));
+		$style = $message->getDomElement()->evaluate("string(soap:body/@use)", array("soap"=>self::NS));
 		if(!$style){
 			$style = "literal";
 		}
@@ -239,26 +235,16 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		}
 		return array($ns, $typeName);
 	}
-	public function addGenericMapper(Base $base) {
-		$conv  = new Converter($base, $this);
-				
-		$base->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
-			return $conv->toXml($data, $node, $typeDef);
-		}); 
-		$base->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
-			return $conv->fromXml($node, $typeDef);
-		});
-	}		
-	
 	public function encodeParameter($xml, BindingOperation $bOperation, MessagePart $message, $data){
-		
+	
+		$use = $this->getEncodingMode($bOperation->getInput());
+				
 		list($ns, $typeName) = $this->getMessageTypeAndNs($message);
 		if($message->isElement() &&  $this->getStyleMode($bOperation)=="document"){
 			$prefix = $this->getPrefixFor($ns);
 			$xml->startElementNS ( $prefix , $typeName, $ns);
 		}else{
-			//$nodo = $destNode->addChild($message->getName()); // parameter nave to be namespaced? //$nodo = $destNode->addChildNs($ns, $prefix.":".$message->getName());
-			$xml->startElementNS ( '' , $message->getName());
+			$xml->startElement ($message->getName());
 		}
 		
 		if($message->isElement()){
@@ -266,10 +252,12 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		}else{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
-		$this->findToXmlMapper($typeDef, $data , $xml );
+		$this->findToXmlMapper($use, $typeDef, $data , $xml );
 		$xml->endElement();
 	}
 	public function decodeParameter($srcNode, BindingOperation $bOperation, MessagePart $message){
+		
+		$use = $this->getEncodingMode($bOperation->getOutput());
 		
 		list($ns, $typeName) = $this->getMessageTypeAndNs($message);
 
@@ -279,7 +267,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$typeDef = $this->container->getType($ns, $typeName);					
 		}
 		
-		return $this->findFromXmlMapper($typeDef, $srcNode);
+		return $this->findFromXmlMapper($use, $typeDef, $srcNode);
 	}
 	protected function decodeMessage($nodes, BindingOperation $bOperation, Message $message) {
 		$ret = array();	

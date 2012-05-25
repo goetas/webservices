@@ -6,8 +6,6 @@ use goetas\xml\wsdl\Wsdl;
 use goetas\xml\wsdl\Port;
 use goetas\webservices\bindings;
 
-use goetas\webservices\converter\Converter;
-
 abstract class Base {
 	/**
 	 * @var Wsdl
