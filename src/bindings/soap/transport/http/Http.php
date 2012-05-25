@@ -179,12 +179,12 @@ class Http implements ISoapTransport{
         
 
 		$this->output = curl_exec($ch);
-		var_dump($this->input );
+		var_dump(htmlentities($this->input));
 		var_dump($this->output );
 	
 		
         $info = curl_getinfo($ch);
-        
+        print_r($info);
 	
         curl_close($ch);
         
