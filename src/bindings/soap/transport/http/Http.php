@@ -175,9 +175,12 @@ class Http implements ISoapTransport{
         // generates the headers, but having the XML is usually the most
         // important part for tracing/debugging.
         $this->input = implode("\r\n", $headers)."\r\n".$message;
+        
+        
 
 		$this->output = curl_exec($ch);
-		
+		var_dump($this->input );
+		var_dump($this->output );
 	
 		
         $info = curl_getinfo($ch);
