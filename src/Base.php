@@ -19,6 +19,12 @@ abstract class Base {
 		$this->options = $options;
 		
 	}
+	public function getOptions($ns) {
+		if (isset($this->options[$ns])){
+			return $this->options[$ns];
+		}
+		return array();
+	}
 	public function getOption($ns, $name) {
 		if (isset($this->options[$ns][$name])){
 			return $this->options[$ns][$name];

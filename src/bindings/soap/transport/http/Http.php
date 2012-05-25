@@ -1,5 +1,7 @@
 <?php
 namespace goetas\webservices\bindings\soap\transport\http;
+use goetas\webservices\bindings\soap\Soap;
+
 use goetas\webservices\Message;
 
 use goetas\webservices\exceptions\TransportException;
@@ -22,7 +24,7 @@ class Http implements ISoapTransport{
 
 	protected $cookies=array();
 	
-	public function __construct() {
+	public function __construct(Soap $soap) {
 		$this->userAgent = "goetas-soap-transport-".phpversion();
 	}
 	public function getUri() {
@@ -123,6 +125,9 @@ class Http implements ISoapTransport{
             curl_setopt($ch, CURLOPT_PROXYUSERPWD,$this->options['proxy_user'] . ':' . $this->options['proxy_pass']);
         }
         if (isset($this->options['user'])) {
+            curl_setopt($ch, CURLOPT_USERPWD, $this->options['user'] . ':' . $this->options['pass']);
+        }
+		if (isset($this->options['soap.transport.https.no_check_certificate'])) {
             curl_setopt($ch, CURLOPT_USERPWD, $this->options['user'] . ':' . $this->options['pass']);
         }
 

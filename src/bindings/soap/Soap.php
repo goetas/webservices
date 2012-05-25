@@ -68,7 +68,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$this->transport->setUri($uriAlternative);
 		}else{
 			$this->transport->setUri($uri);
-		}		
+		}	
 	}
 	protected function envelopeParts(XMLDom $doc) {
 		$prefix = $this->getPrefixFor(self::NS_ENVELOPE);
@@ -105,9 +105,14 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 	
 	protected function getTransport(WsdlBinding $binding) {
 		$ns = $binding->getDomElement()->evaluate("string(soap:binding/@transport)", array("soap"=>self::NS));
-		
-		$this->supportedTransports["http://schemas.xmlsoap.org/soap/http"] = function(Soap $soapBinding, WsdlBinding $binding){
-			return new transport\http\Http($soapBinding, $binding);
+		$client = $this->client;
+		$this->supportedTransports["http://schemas.xmlsoap.org/soap/http"] = function(Soap $soapBinding, WsdlBinding $binding)use($client){
+			
+			$http = new transport\http\Http($soapBinding, $binding);
+			foreach ($client->getOptions('soap.transport.http') as $name => $value){
+				$http->setOption($name, $value);	
+			}
+			return $http;
 		};
 	
 		if(is_callable($this->supportedTransports[$ns])){
