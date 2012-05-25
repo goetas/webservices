@@ -243,7 +243,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$prefix = $this->getPrefixFor($ns);
 			$xml->startElementNS ( $prefix , $typeName, $ns);
 		}else{
-			//$nodo = $destNode->addChild($message->getName()); // parameter nave to be namespaced? //$nodo = $destNode->addChildNs($ns, $prefix.":".$message->getName());
+			// parameter nave to be namespaced?  depends on xshema form qualification mode
 			$xml->startElement( $message->getName());
 		}
 		
