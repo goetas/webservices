@@ -151,6 +151,9 @@ class Http implements ISoapTransport{
         }
 
         $this->checkCompression($message, $headers);
+         if (isset($this->options['no_check_certificate'])) {
+        	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, !$this->options['no_check_certificate']);
+        }
         
         curl_setopt($ch, CURLOPT_POSTFIELDS, $message);
         curl_setopt($ch, CURLOPT_POST, 1);
