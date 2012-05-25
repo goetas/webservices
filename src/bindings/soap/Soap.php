@@ -235,16 +235,6 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		}
 		return array($ns, $typeName);
 	}
-	public function addGenericMapper(Base $base) {
-		$conv  = new Converter($base, $this);
-				
-		$base->addToXmlGenericMapper(function ($typeDef, $data, $node, $_this)use($conv){
-			return $conv->toXml($data, $node, $typeDef);
-		}); 
-		$base->addFromXmlGenericMapper(function ($typeDef ,$node, $_this)use($conv){
-			return $conv->fromXml($node, $typeDef);
-		});
-	}		
 	
 	public function encodeParameter($xml, BindingOperation $bOperation, MessagePart $message, $data){
 		
