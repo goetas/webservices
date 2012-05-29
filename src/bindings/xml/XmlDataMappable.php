@@ -45,8 +45,15 @@ abstract class XmlDataMappable {
 		});
 	}
 	public function getPrefixFor($ns) {
+		if(self::XSD_NS === $ns && !isset($this->prefixes[$ns])){
+			$this->prefixes[$ns] = "xsd";
+		}
+		if(self::XSI_NS === $ns && !isset($this->prefixes[$ns])){
+			$this->prefixes[$ns] = "xsi";
+		}
+		
 		if(!isset($this->prefixes[$ns])){
-			$this->prefixes[$ns] = "ns".count($this->prefixes[$ns]); 
+			$this->prefixes[$ns] = "ns".count($this->prefixes); 
 		}
 		return $this->prefixes[$ns];
 	}

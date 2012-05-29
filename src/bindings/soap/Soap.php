@@ -137,6 +137,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 	}
 	protected function buildXMLMessage(BindingOperation $bOperation, BindingMessage $message, array $params) {
 		$style = $this->getStyleMode($bOperation);
+		$encMode = $this->getEncodingMode($message);
 
 		$xml = new \XMLWriter();
 		$xml->openMemory();
@@ -146,6 +147,11 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 
 		if($style=="rpc"){
 			$xml->startElementNS ( $this->getPrefixFor($bOperation->getOperation()->getNs()) , $bOperation->getName() , $bOperation->getOperation()->getNs());
+			
+			if($encMode=="encoded"){
+				$xml->writeAttributeNs($this->getPrefixFor(self::NS_ENVELOPE), "encodingStyle", self::NS_ENVELOPE, "http://schemas.xmlsoap.org/soap/encoding/");
+			}
+			
 			$this->buildMessage( $xml, $bOperation,  $message->getMessage(), $params);
 			$xml->endElement();
 		}elseif($style=="document"){ 
@@ -248,14 +254,28 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 			$prefix = $this->getPrefixFor($ns);
 			$xml->startElementNS ( $prefix , $typeName, $ns);
 		}else{
-			// parameter nave to be namespaced?  depends on xshema form qualification mode
+			
 			$xml->startElement( $message->getName());
+			
 		}
 		
 		if($message->isElement()){
 			$typeDef = $this->container->getElement($ns, $typeName)->getComplexType();
 		}else{
-			$typeDef = $this->container->getType($ns, $typeName);					
+			$typeDef = $this->container->getType($ns, $typeName);
+
+			
+			//$encMode = $this->getEncodingMode($message);		
+			$styleMode = $this->getStyleMode($bOperation);
+			if($styleMode=="rpc"){
+				
+				$xml->writeAttribute("xmlns:".$this->getPrefixFor($typeDef->getNs()), $typeDef->getNs());
+					
+				$xml->writeAttributeNs(
+					$this->getPrefixFor(self::XSI_NS), "type", 
+					self::XSI_NS, 
+					$this->getPrefixFor($typeDef->getNs()).":".$typeDef->getName());
+			}	
 		}
 		$this->findToXmlMapper($typeDef, $data , $xml );
 		$xml->endElement();

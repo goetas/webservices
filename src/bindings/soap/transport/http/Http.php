@@ -114,7 +114,7 @@ class Http implements ISoapTransport{
 	 * @return XMLDom
 	 */
 	public function send($message){
-		
+
 		$ch = curl_init($this->getUri());
 
         if (isset($this->options['proxy_host'])) {
