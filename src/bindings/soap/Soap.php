@@ -133,7 +133,7 @@ abstract class Soap extends XmlDataMappable implements IBinding{
 		
 		$part = reset($parts);
 		
-		return count($parts)==1 && $part && $part->isElement() && $part->getElement()->getName() == $bOperation->getName() && $this->getEncodingMode($bOperation)=="literal";
+		return count($parts)==1 && $part && $part->isElement() && $part->getElement()->getName() == $bOperation->getName() && $this->getEncodingMode($bOperation->getInput())=="literal";
 	}
 	protected function buildXMLMessage(BindingOperation $bOperation, BindingMessage $message, array $params) {
 		$style = $this->getStyleMode($bOperation);
