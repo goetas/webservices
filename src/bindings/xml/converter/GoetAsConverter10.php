@@ -73,6 +73,7 @@ class GoetAsConverter10 {
 			"http://www.mercuriosistemi.com/building-rental"=>'\mercurio\buildingrental',
 		
 			"http://www.mercuriosistemi.com/hotel-service"=>'\mercurio\hotel\HotelDataBundle\Entity',
+			"http://www.mercuriosistemi.com/hotel/hotel-feedback"=>'\mercurio\hotel\HotelFeedbackBundle\Entity',
 		
 			"http://samples.soamoa.yesso.eu/"=>"\\soamoa\\yesso",
 			"http://tempuri.org/"=>"\\hunderttausend\\flickr",
