@@ -4,8 +4,8 @@ namespace goetas\webservices\bindings\soap;
 use Exception;
 
 class SoapFault extends Exception{
+
 	protected $faultcode;
-	protected $faultstring;
 	protected $faultactor;
 	protected $detail;
 	protected $faultname;
@@ -16,10 +16,9 @@ class SoapFault extends Exception{
 	protected $request;
 	protected $response;
 	public function __construct( $faultcode  ,  $faultstring  ,  $faultactor=null  ,  $detail=null  ,  $faultname=null  ,  $headerfault=null ) {
-		parent::__construct($faultstring, $faultcode);
-		$this->faultcode  = $faultcode;
-		$this->faultstring  = $faultstring;
+		parent::__construct($faultstring);
 		$this->faultactor  = $faultactor;
+		$this->faultcode  = $faultcode;
 		$this->detail  = $detail;
 		$this->faultname  = $faultname;
 		$this->headerfault  = $headerfault;

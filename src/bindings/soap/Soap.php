@@ -20,7 +20,6 @@ use goetas\xml\wsdl\Binding;
 use goetas\xml\wsdl\Message;
 use goetas\xml\wsdl\MessagePart;
 use goetas\xml\wsdl\Port;
-use SoapFault;
 use goetas\webservices\bindings\soaptransport\ISoapTransport;
 use goetas\webservices\bindings\soaptransport;
 use goetas\xml\XMLDomElement;
@@ -67,6 +66,24 @@ abstract class Soap implements IBinding {
 		$this->transport = $this->findTransport($port->getBinding());
 	}
 	protected function addMappings(){
+		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type, Encoder $encoder){
+		
+			$sxml = simplexml_import_dom ($node);
+			
+			$fault = new SoapFault($sxml->faultcode, $sxml->faultstring);
+			
+			return $fault;
+		});
+		/*
+		$this->messageComposer->addToMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type){
+				
+			$sxml = simplexml_import_dom ($node);
+				
+			$fault = new SoapFault($sxml->faultcode, $sxml->faultstring);
+				
+			return $fault;
+		});
+		*/
 	}
 	protected function findTransport(Binding $binding){
 		$transportNs = $binding->getDomElement ()->evaluate ( "string(soap:binding/@transport)", array ("soap" => self::NS) );

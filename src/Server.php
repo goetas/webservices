@@ -108,8 +108,7 @@ class Server extends Base {
 		
 			$parameters = $protocol->getParameters($bindingOperation, $request );
 
-			
-			
+
 			$callable = array($serviceObject, $bindingOperation->getName());
 			if (is_callable($callable)){
 				$return = call_user_func_array($callable, $parameters);
@@ -117,7 +116,7 @@ class Server extends Base {
 				if($return!==null){
 					$returnParams[] = $return;
 				}
-				return $protocol->reply($response, $bindingOperation, $returnParams );
+				$protocol->reply($response, $bindingOperation, $returnParams );
 			}else{
 				throw new \Exception("Non trovo nessun il metodo '".$bindingOperation->getName()."' su ".get_class($serviceObject));
 			}	

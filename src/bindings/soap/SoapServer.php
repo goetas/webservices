@@ -35,24 +35,19 @@ class SoapServer extends Soap implements IServerBinding{
 		$message = $bOperation->getInput();
 		
 		$dom = new XMLDom();
-		$dom->loadXMLStrict('<?xml version="1.0" encoding="UTF-8"?>
-<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.immobinet.it/wsdl/WebserviceImmobileBundle" xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><env:Body><web:setImmobile xmlns:web="http://www.immobinet.it/wsdl/WebserviceImmobileBundle" id="1000" codice="XXX01"><ns0:categoria xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle" destinazione="commerciale" tipo="xxxx"/><ns0:citta xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle" id="999" nazione="IT">Roma</ns0:citta><ns0:descrizione xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><ns0:descrizione lingua="IT">ita</ns0:descrizione><ns0:descrizione lingua="IT">ted</ns0:descrizione></ns0:descrizione><ns0:ace xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><ns0:ipe>90</ns0:ipe><ns0:classe>A</ns0:classe></ns0:ace></web:setImmobile></env:Body></env:Envelope>
-				
-				');
+		$dom->loadXMLStrict($request->getContent());
 		
 		list($heads, $body) = $this->getEnvelopeParts($dom);
 
 		$params = $this->decodeMessage($body, $bOperation,  $bOperation->getInput());
-		header("Content-type:text/plain; charset=utf-8");
-		print_r($params);die();
-		
+				
 		return $params;
 		
 	}
 	public function reply(Response $response, BindingOperation $bOperation,  array $params) {
 		$outMessage = $bOperation->getOutput();
-		$xml = new XMLDom();
-		$this->buildXMLMessage($xml, $bOperation, $outMessage, $params);
+		
+		$xml = $this->buildMessage($params, $bOperation, $outMessage);
 		$response->setContent($xml->saveXML());
 	}
 	/**
@@ -73,7 +68,6 @@ class SoapServer extends Soap implements IServerBinding{
 	}
 	public function handleServerError(Response $response, \Exception $exception, Port $port){
 		
-		throw $exception;
 		$xml = new XMLDom();
 		
 		$envelope = $xml->addChildNS ( self::NS_ENVELOPE, $xml->getPrefixFor ( self::NS_ENVELOPE ) . ':Envelope' );

@@ -226,10 +226,13 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 		
 	}
 	
-	
-		
 	public function decode(\DOMNode $node, Type $type ) {
 		if($type instanceof AbstractComplexType){
+			
+			if(isset($this->fromMap[$type->getNs()][$type->getName()])){
+				return call_user_func($this->fromMap[$type->getNs()][$type->getName()], $node, $type,  $this );
+			}
+			
 			
 			$variabile = $this->convertSimpleXmlPhp($node, $type);
 
@@ -306,6 +309,7 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 		}
 	}
 	protected function convertSimpleXmlPhp(\DOMNode $node, Type $xsd) {
+
 		if(isset($this->fromMap[$xsd->getNs()][$xsd->getName()])){
 			return call_user_func($this->fromMap[$xsd->getNs()][$xsd->getName()], $node, $xsd, $this);
 		}elseif(isset($this->fromFallback[$xsd->getNs()])){
