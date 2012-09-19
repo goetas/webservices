@@ -14,28 +14,18 @@ use goetas\webservices\bindings;
 class Client extends Base {
 	protected $proxies = array();
 	
-	public function __construct(Wsdl $wsdl, array $options =array()) {
+	public function __construct($wsdl, array $options =array()) {		
 		parent::__construct($wsdl, $options);
 
-
-		$this->registerProxyObject(function($client, $port, $protocol){
-			return new ClientProxy($client, $port, $protocol);
-		});
-		
-		$this->addProtocol("http://schemas.xmlsoap.org/wsdl/soap/", function(Base $client, Port $port){
-			return new bindings\soap\SoapClient($client, $port);
-		});
+		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function(Port $port, $options){
+			return new bindings\soap\SoapClient($port);
+		});		
 	}
-
-	public function registerProxyObject($proxy, $serviceNs=null, $serviceName=null, $servicePort=null ) {
-		if(!is_callable($proxy)){
-			throw new InvalidArgumentException("Invalid callback as proxy");
-		}
-		$this->proxies[$serviceNs?$serviceNs:'*'][$serviceName?$serviceName:'*'][$servicePort?$servicePort:'*']=$proxy;
-	}
-	public function getProxy($serviceNs=null, $serviceName=null, $servicePort=null) {
+	
+	public function getProxy($serviceName=null, $servicePort=null, $serviceNs=null, $configurator = null) {
 		
 		$services = $this->wsdl->getServices();
+		
 		if(!$serviceNs){
 			$serviceAllNs =  array_keys($services);
 			$serviceNs = reset($serviceAllNs);
@@ -46,11 +36,10 @@ class Client extends Base {
 		}
 		$service = $services[$serviceNs][$serviceName];
 
-		
 		if(!$servicePort){		
 			foreach ($service->getPorts() as $port) {
 				try {
-					$protocol = $this->getProtocol($port);
+					$binding = $this->getBinding($port);
 					$servicePort = $port->getName();
 					break;
 				} catch (UnsuppoportedProtocolException $e) {
@@ -59,16 +48,20 @@ class Client extends Base {
 			}
 		}else{
 			$port = $service->getPort($servicePort);
-			$protocol = $this->getProtocol($port);
+			$binding = $this->getBinding($port);
 		}
 		
-		$parts = array($servicePort,$serviceName,$serviceNs);
-		$c = 0;
-		do{
-			$proxy = $this->proxies[$parts[2]][$parts[1]][$parts[0]];
-			$parts[$c++]="*";
-		}while(!$proxy);
-		$proxyObj = call_user_func($proxy, $this, $port,$protocol );		
+		if(is_callable($configurator)){
+			call_user_func($configurator, $binding, $this, $port);
+		}
+				
+		$proxyObj = new ClientProxy();
+
+		$proxyObj->setBinding($binding);
+		$proxyObj->setClient($this);
+		$proxyObj->setPort($port);
+		
+		
 		return $proxyObj;
 	}
 }

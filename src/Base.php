@@ -12,9 +12,13 @@ abstract class Base {
 	 */
 	protected $wsdl;
 	protected $options = array();
-	protected $supportedBindings = array();
+	private $supportedBindings = array();
 	
-	public function __construct(Wsdl $wsdl, array $options =array()) {
+	public function __construct($wsdl, array $options =array()) {
+		
+		if(!($wsdl instanceof Wsdl)){
+			$wsdl = new Wsdl($wsdl);
+		}
 		$this->wsdl = $wsdl;
 		$this->options = $options;
 		
@@ -45,16 +49,16 @@ abstract class Base {
 	 * @throws UnsuppoportedProtocolException
 	 * @return IBinding
 	 */
-	public function getProtocol(Port $port) {
+	protected function getBinding(Port $port) {
 		foreach ($this->supportedBindings as $ns => $callback) {
 			if($port->getDomElement()->query("//*[namespace-uri()='$ns']")->length){
-				return call_user_func($callback, $this, $port);
+				return call_user_func($callback, $port, $this->getOptions($ns));
 			}
 		}
 		throw new UnsuppoportedProtocolException("Nessun protocolo compatibile");
 	}
-	public function addProtocol($ns, $callable) {
-		$this->supportedBindings[$ns] = $callable;
+	public function addSupportedBinding($ns, $callback) {
+		$this->supportedBindings[$ns] = $callback;
 	}
 	
 	/**

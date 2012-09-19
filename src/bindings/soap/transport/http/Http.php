@@ -1,5 +1,13 @@
 <?php
 namespace goetas\webservices\bindings\soap\transport\http;
+
+
+use goetas\xml\wsdl\BindingOperation;
+
+use goetas\xml\wsdl\Port;
+
+use Symfony\Component\HttpFoundation\Response;
+
 use goetas\webservices\bindings\soap\Soap;
 
 use goetas\webservices\Message;
@@ -8,13 +16,13 @@ use goetas\webservices\exceptions\TransportException;
 use goetas\xml\XMLDom;
 use InvalidArgumentException;
 
-use goetas\webservices\bindings\soap\transport\ISoapTransport;
+use goetas\webservices\bindings\soap\transport\ITransport;
 
-class Http implements ISoapTransport{
-	protected $userAgent;
-	protected $uri;
+class Http implements ITransport{
+
+
 	protected $uriParts;
-	protected $action;
+
 	protected $options=array();
 	protected $encoding = 'utf-8';
 	protected $contentType = 'text/xml';
@@ -24,31 +32,8 @@ class Http implements ISoapTransport{
 
 	protected $cookies=array();
 	
-	public function __construct(Soap $soap) {
+	public function __construct() {
 		$this->userAgent = "goetas-soap-transport-".phpversion();
-	}
-	public function getUri() {
-		return $this->uri;
-	}
-	public function getContentType() {
-		return $this->contentType;
-	}
-	public function setContentType($contentType) {
-		if(!preg_match("~[a-z]/[a-z]~i", $contentType)){
-			throw new InvalidArgumentException("Content type non valido");
-		}
-		$this->contentType = $contentType;
-	}
-	public function getAction() {
-		return $this->action;
-	}
-	
-	public function setUri($uri) {
-		$this->uri = $uri;
-		$this->uriParts = parse_url($this->uri);
-	}
-	public function setAction($action) {
-		$this->action = $action;
 	}
 	protected function checkResponse($info, $response) {
 		/*
@@ -76,9 +61,7 @@ class Http implements ISoapTransport{
 		    [redirect_time] => 0
 )
 		 */
-		if (!$this->uri){
-			throw new TransportException("Invalid URI");
-		}
+	
 		$code = $info["http_code"];
 		switch($code) {
             case 100: // Continue
@@ -109,13 +92,24 @@ class Http implements ISoapTransport{
                 break;
         }
 	}
+	protected $debugUri;
+	public function setDebugUri($debugUri) {
+		$this->debugUri = $debugUri;
+	}
 	/**
 	 * @see bindings/soaptransport/goetas\webservices\bindings\soaptransport.ISoapTransport::send()
-	 * @return XMLDom
+	 * @return string
 	 */
-	public function send($message){
-
-		$ch = curl_init($this->getUri());
+	public function send($message, Port $wsdlPort, BindingOperation $bOpetation){
+		
+		$soapAction = $bOpetation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>Soap::NS));
+			
+		$uri = $this->debugUri?:$wsdlPort->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>Soap::NS));
+		
+		if (!$uri){
+			throw new TransportException("Invalid URI");
+		}
+		$ch = curl_init($uri);
 
         if (isset($this->options['proxy_host'])) {
             $port = isset($this->options['proxy_port']) ? $this->options['proxy_port'] : 8080;
@@ -132,9 +126,9 @@ class Http implements ISoapTransport{
         }
 
         $headers = array();
-        $headers['Content-Type'] = $this->getContentType()."; charset=$this->encoding";
+        $headers['Content-Type'] = "text/xml; charset=$this->encoding";
         $headers['Content-Length'] = strlen($message);
-		$headers['SOAPAction'] = '"' . $this->getAction() . '"';
+		$headers['SOAPAction'] = '"' . $soapAction . '"';
 		$headers['Accept-Encoding'] = 'gzip, deflate';
 		
         if (isset($this->options['headers'])) {
@@ -316,19 +310,5 @@ class Http implements ISoapTransport{
         }
 
         return implode("; ", $cookies);
-    }
-    public function reply($message, $isError = false) {
-    	
-    	$response = new Message();
-    	$response->setMeta("Content-type", $this->getContentType());
-    	$response->setMeta("Content-length", strlen($message));
-    	$response->setMeta("Accept-Encoding", "gzip, deflate");
-
-    	if($isError){
-    		$response->setMeta("HTTP/1.1 500 Internal Server Error"); 
-    	}
-    	$response->setData($message);
-    	
-    	return $response;
     }
 }

@@ -1,6 +1,10 @@
 <?php 
 namespace goetas\webservices\bindings\soap;
 
+use Symfony\Component\HttpFoundation\Response;
+
+use Symfony\Component\HttpFoundation\Request;
+
 use goetas\webservices\IServerBinding;
 
 use goetas\webservices\Base;
@@ -27,70 +31,76 @@ use goetas\xml\XMLDomElement;
 use goetas\xml\XMLDom;
 
 class SoapServer extends Soap implements IServerBinding{
-	public function getParameters(BindingOperation $bOperation, RawMessage $raw) {
+	public function getParameters(BindingOperation $bOperation, Request $request) {
 		$message = $bOperation->getInput();
 		
 		$dom = new XMLDom();
-		$dom->loadXMLStrict($raw->getData());
-		
-		list($heads, $bodys, $env) = $this->envelopeParts($dom);
+		$dom->loadXMLStrict('<?xml version="1.0" encoding="UTF-8"?>
+<env:Envelope xmlns:env="http://schemas.xmlsoap.org/soap/envelope/" xmlns:web="http://www.immobinet.it/wsdl/WebserviceImmobileBundle" xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><env:Body><web:setImmobile xmlns:web="http://www.immobinet.it/wsdl/WebserviceImmobileBundle" id="1000" codice="XXX01"><ns0:categoria xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle" destinazione="commerciale" tipo="xxxx"/><ns0:citta xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle" id="999" nazione="IT">Roma</ns0:citta><ns0:descrizione xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><ns0:descrizione lingua="IT">ita</ns0:descrizione><ns0:descrizione lingua="IT">ted</ns0:descrizione></ns0:descrizione><ns0:ace xmlns:ns0="http://www.immobinet.it/schema/WebserviceImmobileBundle"><ns0:ipe>90</ns0:ipe><ns0:classe>A</ns0:classe></ns0:ace></web:setImmobile></env:Body></env:Envelope>
 				
-		if($message){
-			$useOutput = $this->getEncodingMode($message);
-		}
+				');
+		
+		list($heads, $body) = $this->getEnvelopeParts($dom);
 
-		$inputParts = $bOperation->getOperation()->getInput()->getParts();
-		$part = reset($inputParts);
-		if($part && $this->isMicrosoftStyle($bOperation)){ // document wrapped hack
-			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
-			$this->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
-		}
-
-		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $message->getMessage());
-		return $partsReturned;
+		$params = $this->decodeMessage($body, $bOperation,  $bOperation->getInput());
+		header("Content-type:text/plain; charset=utf-8");
+		print_r($params);die();
+		
+		return $params;
 		
 	}
-	public function reply(BindingOperation $bOperation,  array $params) {
+	public function reply(Response $response, BindingOperation $bOperation,  array $params) {
 		$outMessage = $bOperation->getOutput();
-		
-		$xml = $this->buildXMLMessage($bOperation, $outMessage, $params);
-		
-		return $this->transport->reply($xml);
+		$xml = new XMLDom();
+		$this->buildXMLMessage($xml, $bOperation, $outMessage, $params);
+		$response->setContent($xml->saveXML());
 	}
 	/**
 	 * @see goetas\webservices.Binding::findOperation()
 	 * @return \goetas\xml\wsd\BindingOperation
 	 */
-	public function findOperation(WsdlBinding $binding, RawMessage $message){
+	public function findOperation(WsdlBinding $binding, Request $request){
 		
-		$action = trim($message->getMeta("HTTP_SOAPACTION"), '"');
-		$operationName = $binding->getDomElement()->evaluate("string(//soap:operation[@soapAction='$action']/../@name)", array("soap"=>self::NS));
+		$action = trim($request->headers->get("SoapAction"), '"');
 		
+		if(strlen($action)){
+			$operationName = $binding->getDomElement()->evaluate("string(//soap:operation[@soapAction='$action']/../@name)", array("soap"=>self::NS));
+		}else{
+			$operationName = 'setImmobile';
+		}
 		return $binding->getOperation($operationName);
 		
 	}
-	public function handleServerError(\Exception $exception){
-		$xml = new \XMLWriter();
-		$xml->openMemory();
-		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Envelope' , self::NS_ENVELOPE );
-
+	public function handleServerError(Response $response, \Exception $exception, Port $port){
 		
-		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Body' , null );
+		throw $exception;
+		$xml = new XMLDom();
 		
-		$xml->startElementNS ( $this->getPrefixFor(self::NS_ENVELOPE) , 'Fault' , null );
-		$xml->writeAttribute("xmlns", '');
-			
-			$xml->startElement(  'faultcode' );
-			$xml->text (  $exception->getCode()?:"SOAP-ENV:Server" );
-			$xml->endElement();
-			
-			$xml->startElement ( 'faultstring'  );
-			$xml->text (  $exception->getMessage()?:"no-secription" );
-			$xml->endElement();
-			
-		$xml->endElement();//Fault
-		$xml->endElement();//Body
-		$xml->endElement();//Envelope
-		return $this->transport->reply($xml->outputMemory(false), true);
+		$envelope = $xml->addChildNS ( self::NS_ENVELOPE, $xml->getPrefixFor ( self::NS_ENVELOPE ) . ':Envelope' );
+		
+		$body = $envelope->addChildNS ( self::NS_ENVELOPE, 'Body' );
+		$fault = $body->addChildNS ( self::NS_ENVELOPE, 'Fault' );
+		
+		$fault->addChild("faultcode", "soap:Server" );
+		$fault->addChild("faultstring", $exception->getMessage() );
+		
+		$response->setStatusCode(500);
+		$response->setContent($xml->saveXML());
+		$response->headers->set("Content-Type", "text/xml");
+		
 	}
+	/*    
+	 public function reply($message, $isError = false) {
+    	
+
+    	$response->setMeta("Content-type", $this->getContentType());
+    	$response->setMeta("Content-length", strlen($message));
+    	$response->setMeta("Accept-Encoding", "gzip, deflate");
+
+    	$response->setData($message);
+    	
+    	return $response;
+    }
+    */
+	
 }

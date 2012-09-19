@@ -1,6 +1,10 @@
 <?php 
 namespace goetas\webservices\bindings\soap;
 
+use Symfony\Component\HttpFoundation\Request;
+
+use Symfony\Component\HttpFoundation\Response;
+
 use goetas\webservices\IClientBinding;
 
 use goetas\webservices\Base;
@@ -17,8 +21,6 @@ use goetas\xml\wsdl\Port;
 
 use goetas\webservices\Message as RawMessage;
 
-use SoapFault;
-
 use goetas\webservices\bindings\soaptransport\ISoapTransport;
 use goetas\webservices\bindings\soaptransport;
 
@@ -27,53 +29,45 @@ use goetas\xml\XMLDomElement;
 use goetas\xml\XMLDom;
 
 class SoapClient extends Soap implements IClientBinding{
+	
 	public function findOperation(WsdlBinding $binding, $operationName, array $params) {
 		return $binding->getOperation($operationName);
 	}
-
+	
 	public function send(BindingOperation $bOperation, array $params) {
+		
+		$xml = $this->buildMessage($params, $bOperation, $bOperation->getInput());
+		header("Content-type:text/xml; charset=utf-8");echo $xml->saveXML();die();				
+		$transport = $this->getTransport($bOperation->getBinding());
 
-		$inputMessage = $bOperation->getInput();
+		$response = $transport->send($xml->saveXML(), $this->port, $bOperation);
+		
 		$outMessage = $bOperation->getOutput();
 		
-		$soapAction = $bOperation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>self::NS));
-		$this->transport->setAction($soapAction);
-		
-
-		$xml = $this->buildXMLMessage($bOperation, $inputMessage, $params);
-
-		$response = $this->transport->send($xml);
-		
-	
-		try {
-			$retDoc = new \goetas\xml\XMLDom();
-			$retDoc->loadXMLStrict($response);	
-		} catch (\DOMException $e) {
-			throw new \Exception("Wrong Response, expected XML. Found ".substr($response, 0,2000), 100, $e);
-		}
-		
-		list($heads, $bodys, $env) = $this->envelopeParts($retDoc);
-				
 		if($outMessage){
-			$useOutput = $this->getEncodingMode($outMessage);
-		}
-		
-		if($this->isMicrosoftStyle($bOperation)){ // document wrapped hack
-			$outputParts = $bOperation->getOperation()->getOutput()->getParts();
-		
-			$part = reset($outputParts);
-		
-			$xsdElType = $this->container->getElement($part->getElement()->getNs(),$part->getElement()->getName())->getComplexType();
+			try {
+				$retDoc = new XMLDom();
+				$retDoc->loadXMLStrict($response);	
+			} catch (\DOMException $e) {
+				throw new \Exception("Wrong response, expected XML. Found '$response'", 100, $e);
+			}
 			
-			$this->addFromXmlMapper($xsdElType->getNs(), $xsdElType->getName(), array($this, 'formXmlMicrosoftMapper'));
+			list($head, $body, $env) = $this->getEnvelopeParts($retDoc);
+				
+			$partsReturned = $this->decodeMessage($body, $bOperation,  $outMessage);
+	
+			foreach ($partsReturned as $param){
+				if($param instanceof SoapFault){
+					throw $param;
+				}
+			}
+			// @todo configurazione per i metodi che ritornano piu parti
+			if(count($partsReturned)==1){
+				return reset($partsReturned);
+			}elseif(count($partsReturned)==0){
+				return null;
+			}
+			return $partsReturned;
 		}
-
-		$partsReturned = $this->decodeMessage( $bodys, $bOperation,  $outMessage->getMessage());
-
-		if(count($partsReturned)==1){
-			return reset($partsReturned);
-		}
-		return $partsReturned;
-		
 	}
 }

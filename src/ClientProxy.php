@@ -4,7 +4,7 @@ use goetas\xml\wsdl\Port;
 use goetas\xml\wsdl\Binding as WsdlBinding;
 use goetas\webservices\Binding;
 
-class ClientProxy {
+class ClientProxy implements IClientProxy {
 	/**
 	 * @var IClientBinding
 	 */
@@ -17,18 +17,20 @@ class ClientProxy {
 	 * @var Port
 	 */
 	protected $port;
-	/**
-	 * @param Client $client
-	 * @param Port $port
-	 */
-	public function __construct(Client $client, Port $port, IClientBinding $binding) {
-		$this->client = $client;
-		$this->port = $port;
-		$this->binding = $binding;
-	}
 	public function __call($method, $params) {
-
 		$bindingOperation = $this->binding->findOperation($this->port->getBinding(), $method, $params);
 		return $this->binding->send($bindingOperation, $params);
 	}
+	public function setBinding(IClientBinding $binding) {
+		$this->binding = $binding;
+	}
+
+	public function setClient(Client $client) {
+		$this->client = $client;
+	}
+
+	public function setPort(Port $port) {
+		$this->port = $port;
+	}
+
 }

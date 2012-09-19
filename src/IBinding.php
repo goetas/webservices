@@ -21,20 +21,4 @@ use Exception;
 use InvalidArgumentException;
 
 interface IBinding {
-	/**
-	 * Codifica in XML (o altro formato) il dato passato in $data
-	 * @param object $xml
-	 * @param BindingOperation $operation
-	 * @param MessagePart $message
-	 * @param mixed $data
-	 */
-	function encodeParameter($xml, BindingOperation $operation, MessagePart $message, $data);
-	/**
-	 * Decodifica il dato in $src e resitituiscilo.
-	 * @param unknown_type $src
-	 * @param unknown_type $bOperation
-	 * @param unknown_type $message
-	 * @return mixed
-	 */
-	function decodeParameter($src, BindingOperation $bOperation, MessagePart $message);
 }
