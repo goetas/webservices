@@ -14,14 +14,14 @@ use InvalidArgumentException;
 class Server extends Base {
 	protected $servers = array();
 	protected $initializers = array();
-	
+
 	public function __construct($wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
-		
+
 		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function (Port $port, $options) {
 			return new bindings\soap\SoapServer($port);
 		});
-		
+
 	}
 	public function addService($proxy, $serviceName = null, $serviceNs = null, $servicePort = null, $callback = null) {
 		if(!is_object($proxy)){
@@ -51,11 +51,11 @@ class Server extends Base {
 		if($request===null){
 			$request = Request::createFromGlobals();
 		}
-		
+
 		$serviceNs = null;
 		$serviceName = null;
 		$servicePort = null;
-		
+
 		$services = $this->wsdl->getServices();
 		if(!$serviceNs){
 			$serviceAllNs =  array_keys($services);
@@ -67,8 +67,8 @@ class Server extends Base {
 		}
 		$service = $services[$serviceNs][$serviceName];
 
-		
-		if(!$servicePort){		
+
+		if(!$servicePort){
 			foreach ($service->getPorts() as $port) {
 				try {
 					$protocol = $this->getBinding($port);
@@ -82,10 +82,10 @@ class Server extends Base {
 			$port = $service->getPort($servicePort);
 			$protocol = $this->getBinding($port);
 		}
-		
-		
-		
-		
+
+
+
+
 		$response = new Response();
 		try {
 			$parts = array($servicePort,$serviceName,$serviceNs);
@@ -94,23 +94,24 @@ class Server extends Base {
 				$serviceObject = $this->servers[$parts[2]][$parts[1]][$parts[0]];
 				$parts[$c++]="*";
 			}while(!$serviceObject && $c<4);
-		
+
 			if(!$serviceObject){
 				throw new \Exception("Non trovo nessun server per gestire la richiesta");
 			}
-		
+
 			if (isset($this->initializers[spl_object_hash($serviceObject)])){
 				call_user_func($this->initializers[spl_object_hash($serviceObject)], $protocol, $port, $this);
 			}
-			
-			
+
+
 			$bindingOperation = $protocol->findOperation($port->getBinding(), $request);
-		
+
 			$parameters = $protocol->getParameters($bindingOperation, $request );
 
 
 			$callable = array($serviceObject, $bindingOperation->getName());
 			if (is_callable($callable)){
+
 				$return = call_user_func_array($callable, $parameters);
 				$returnParams = array();
 				if($return!==null){
@@ -119,10 +120,10 @@ class Server extends Base {
 				$protocol->reply($response, $bindingOperation, $returnParams );
 			}else{
 				throw new \Exception("Non trovo nessun il metodo '".$bindingOperation->getName()."' su ".get_class($serviceObject));
-			}	
+			}
 		} catch (\Exception $e) {
 			$protocol->handleServerError($response, $e, $port);
-		}	
-		return $response;		
+		}
+		return $response;
 	}
 }
