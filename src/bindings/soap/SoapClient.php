@@ -37,7 +37,7 @@ class SoapClient extends Soap implements IClientBinding{
 	public function send(BindingOperation $bOperation, array $params) {
 
 		$xml = $this->buildMessage($params, $bOperation, $bOperation->getInput());
-		//header("Content-type:text/xml; charset=utf-8");echo $xml->saveXML();die();
+
 		$transport = $this->getTransport($bOperation->getBinding());
 
 		$response = $transport->send($xml->saveXML(), $this->port, $bOperation);
@@ -47,6 +47,7 @@ class SoapClient extends Soap implements IClientBinding{
 			try {
 				$retDoc = new XMLDom();
 				$retDoc->loadXMLStrict($response);
+
 			} catch (\DOMException $e) {
 				throw new \Exception("Wrong response, expected XML. Found '$response'", 100, $e);
 			}

@@ -79,6 +79,9 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 			return strval($data);
 		};
 		$simpleToInt = function($data){
+			if(is_object($data)){
+				$data = strval($data);
+			}
 			return intval($data);
 		};
 		$simpleToFloat = function($data){
@@ -118,9 +121,9 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 
 		$this->toMap[$xsd]["gYear"] = $simpleToInt;
 
-		$this->toMap[$xsd]["dateTime"] = $simpleToInt(DATE_W3C);
-		$this->toMap[$xsd]["date"] = $simpleToInt("Y-m-d");
-		$this->toMap[$xsd]["time"] = $simpleToInt("H:i:s");
+		$this->toMap[$xsd]["dateTime"] = $simpleToDate(DATE_W3C);
+		$this->toMap[$xsd]["date"] = $simpleToDate("Y-m-d");
+		$this->toMap[$xsd]["time"] = $simpleToDate("H:i:s");
 
 
 
@@ -252,7 +255,11 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 					$attributeNode = $node->getAttributeNode($attribute->getName());
 				}
 
-				self::setValueTo($variabile, $attribute->getName(), $this->decode($attributeNode, $attribute->getType()));
+				if($attributeNode){
+					self::setValueTo($variabile, $attribute->getName(), $this->decode($attributeNode, $attribute->getType()));
+				}elseif($attribute->isRequred()){
+					throw new \Exception("Noon trovo l'attributo obbligatorio $attribute su $type");
+				}
 			}
 
 			if($type instanceof ComplexType){
@@ -319,7 +326,7 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 			if ($xsd instanceof SimpleType &&  $base){
 				return $this->convertSimpleXmlPhp($node, $base);
 			}else{
-				throw new \Exception("Non trovo una codifica da XML a PHP per ".$xsd);
+				throw new \Exception("Non trovo una codifica da XML a PHP per ".get_class($xsd)." di ".$node->nodeValue);
 			}
 		}
 	}

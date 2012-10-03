@@ -31,7 +31,7 @@ class Http implements ITransport{
 	protected $timeout = 0;
 
 	protected $cookies=array();
-	
+
 	public function __construct() {
 		$this->userAgent = "goetas-soap-transport-".phpversion();
 	}
@@ -61,7 +61,7 @@ class Http implements ITransport{
 		    [redirect_time] => 0
 )
 		 */
-	
+
 		$code = $info["http_code"];
 		switch($code) {
             case 100: // Continue
@@ -101,11 +101,11 @@ class Http implements ITransport{
 	 * @return string
 	 */
 	public function send($message, Port $wsdlPort, BindingOperation $bOpetation){
-		
+
 		$soapAction = $bOpetation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>Soap::NS));
-			
+
 		$uri = $this->debugUri?:$wsdlPort->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>Soap::NS));
-		
+
 		if (!$uri){
 			throw new TransportException("Invalid URI");
 		}
@@ -130,7 +130,12 @@ class Http implements ITransport{
         $headers['Content-Length'] = strlen($message);
 		$headers['SOAPAction'] = '"' . $soapAction . '"';
 		$headers['Accept-Encoding'] = 'gzip, deflate';
-		
+
+
+		header("Content-type:text/xml; charset=utf-8");
+		//print_r($headers);
+		//echo $message;die();
+
         if (isset($this->options['headers'])) {
             $headers = array_merge($headers, $this->options['headers']);
         }
@@ -148,20 +153,20 @@ class Http implements ITransport{
          if (isset($this->options['no_check_certificate'])) {
         	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, !$this->options['no_check_certificate']);
         }
-        
+
         curl_setopt($ch, CURLOPT_POSTFIELDS, $message);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_FAILONERROR, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($ch, CURLOPT_HEADER, 1);
-        
+
         if (defined('CURLOPT_HTTP_VERSION')) {
             curl_setopt($ch, CURLOPT_HTTP_VERSION, 1);
         }
         if (!ini_get('safe_mode') && !ini_get('open_basedir')) {
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
         }
-        
+
         $cookies = $this->generateCookieHeader($this->options);
         if ($cookies) {
             curl_setopt($ch, CURLOPT_COOKIE, $cookies);
@@ -177,37 +182,37 @@ class Http implements ITransport{
         // generates the headers, but having the XML is usually the most
         // important part for tracing/debugging.
         $this->input = implode("\r\n", $headers)."\r\n".$message;
-        
-        
+
+
 
 		$this->output = curl_exec($ch);
 		//var_dump(htmlentities($this->input));
 		//var_dump($this->output );
-	
-		
+
+
         $info = curl_getinfo($ch);
         //print_r($info);
-	
+
         curl_close($ch);
-        
-        
+
+
 		$this->checkResponse($info,  $this->output);
-		
-		
+
+
 		if(preg_match ("/^(.*?)\r?\n\r?\n(.*)/sm" , $this->output, $mch)){
-			
+
 			list(,$headersStr, $xmlString) = $mch;
-	 
+
 			list($headers, $cookies) = $this->parseHeaders($headersStr);
 			$xmlString = $this->checkDeCompression($xmlString, $headers);
-			
+
 			return $xmlString;
 		}
 		throw new \Exception("Wrong Response, expected data");
-		
+
 	}
 	protected function checkCompression(&$xml, array &$headers) {
-		
+
 		if(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='gzip'){
 			$xml = str_repeat(0, 10).gzdeflate($xml);
 		}elseif(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='deflate'){
@@ -235,7 +240,7 @@ class Http implements ITransport{
         /* Largely borrowed from HTTP_Request. */
         $headers = array();
         $cookies = array();
-        
+
         $headersSplit = preg_split("/\r?\n/", $headersStr);
         foreach ($headersSplit as $value) {
             if (strpos($value,':') === false) {
