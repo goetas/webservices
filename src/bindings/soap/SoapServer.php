@@ -74,7 +74,7 @@ class SoapServer extends Soap implements IServerBinding{
 		$fault = $body->addChildNS ( self::NS_ENVELOPE, 'Fault' );
 
 		$fault->addChild("faultcode", "soap:Server" );
-		$fault->addChild("faultstring", $exception->getMessage() );
+		$fault->addChild("faultstring", get_class($exception).": ".$exception->getMessage() );
 
 		$response->setStatusCode(500);
 		$response->setContent($xml->saveXML());

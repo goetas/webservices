@@ -326,7 +326,7 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 			if ($xsd instanceof SimpleType &&  $base){
 				return $this->convertSimpleXmlPhp($node, $base);
 			}else{
-				throw new \Exception("Non trovo una codifica da XML a PHP per ".get_class($xsd)." di ".$node->nodeValue);
+				throw new \Exception("Non trovo una codifica da XML a PHP per ".$xsd." di ".$node->nodeValue);
 			}
 		}
 	}
