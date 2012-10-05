@@ -229,16 +229,23 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 
 	}
 
-	public function decode(\DOMNode $node, Type $type ) {
-		if($type instanceof AbstractComplexType){
-
-			if(isset($this->fromMap[$type->getNs()][$type->getName()])){
-				return call_user_func($this->fromMap[$type->getNs()][$type->getName()], $node, $type,  $this );
-			}
-
+	public function decode(\DOMNode $node, Type $type) {
+		if(isset($this->fromMap[$type->getNs()][$type->getName()])){
+			return call_user_func($this->fromMap[$type->getNs()][$type->getName()], $node, $type,  $this );
+		}
+		if($type instanceof AbstractComplexType || $type instanceof SimpleType){
 
 			$variabile = $this->convertSimpleXmlPhp($node, $type);
 
+			$this->decodeInto($node, $type , $variabile);
+
+		}else{
+			$variabile = $node;
+		}
+		return $variabile;
+	}
+	public function decodeInto(\DOMNode $node, Type $type , $variabile) {
+		if($type instanceof AbstractComplexType){
 
 			if($type instanceof SimpleContent && $variabile instanceof \stdClass){ // hack per i complex type simple content
 				$newVariabile = new \stdClass();
@@ -263,6 +270,7 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 			}
 
 			if($type instanceof ComplexType){
+
 				$childs = array();
 				foreach ($node->childNodes as $child){
 					$childs[$child->namespaceURI][$child->localName][]=$child;
@@ -275,7 +283,6 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 					$nm = $element->getName();
 
 					if(isset($childs[$ns][$nm])){
-
 						if ($element->getMax()>1){
 							foreach ($childs[$ns][$nm] as $elementNode){
 								self::addValueTo($variabile, $this->decode($elementNode, $elementType ));
@@ -292,16 +299,16 @@ class LitteralEncoder extends AbstractEncoder implements Encoder {
 						throw new \Exception("Non trovo nessun tag per l'elemento di tipo {{$ns}}#{$nm}");
 					}
 				}
+
+				if($type->getBase()){
+					$this->decodeInto($node, $type->getBase(), $variabile);
+				}
 			}
 		}elseif($type instanceof SimpleType){
-			$variabile = $this->convertSimpleXmlPhp($node, $type);
 			if(is_object($variabile) && $type->getBase()){
 				self::setValueTo($variabile, '__value', $this->convertSimpleXmlPhp($node, $type->getBase()));
 			}
-		}else{
-			$variabile = $node;
 		}
-		return $variabile;
 	}
 	protected function convertSimplePhpXml($value, SimpleType $xsd) {
 		if(isset($this->toMap[$xsd->getNs()][$xsd->getName()])){
