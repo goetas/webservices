@@ -48,6 +48,7 @@ abstract class AbstractEncoder implements Encoder {
 	}	
 	protected static function objectExtract($obj, $name) {
 		$c = get_class($obj);
+		$name = lcfirst($name);
 		if(!isset(self::$refCacheProp[$c][$name])){
 			
 			if(!isset(self::$refCacheObj[$c])){
