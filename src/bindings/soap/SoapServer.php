@@ -60,10 +60,12 @@ class SoapServer extends Soap implements IServerBinding{
 			$xml = $response->getContent();
 			$response->setContent(str_repeat(0, 10).gzdeflate($xml));
 			$response->headers->set('Content-Length', strlen($xml));
+			$response->headers->set("Content-Encoding", "gzip");
 		}elseif(strpos($encoding, 'deflate')!==false){
 			$xml = $response->getContent();
 			$response->setContent(gzcompress($xml));
 			$response->headers->set('Content-Length', strlen($xml));
+			$response->headers->set("Content-Encoding", "deflate");
 		}
 	}
 	/**
