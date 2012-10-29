@@ -44,11 +44,27 @@ class SoapServer extends Soap implements IServerBinding{
 		return $params;
 
 	}
-	public function reply(Response $response, BindingOperation $bOperation,  array $params) {
+	public function reply(Response $response, BindingOperation $bOperation,  array $params, Request $request) {
 		$outMessage = $bOperation->getOutput();
 
 		$xml = $this->buildMessage($params, $bOperation, $outMessage);
 		$response->setContent($xml->saveXML());
+		
+		$this->checkForCompression($response, $request);
+	}
+	protected function checkForCompression(Response $response, Request $request){
+		
+		$encoding = strval($request->headers->get('Accept-Encoding'));
+		
+		if(strpos($encoding, 'gzip')!==false){
+			$xml = $response->getContent();
+			$response->setContent(str_repeat(0, 10).gzdeflate($xml));
+			$response->headers->set('Content-Length', strlen($xml));
+		}elseif(strpos($encoding, 'deflate')!==false){
+			$xml = $response->getContent();
+			$response->setContent(gzcompress($xml));
+			$response->headers->set('Content-Length', strlen($xml));
+		}
 	}
 	/**
 	 * @see goetas\webservices.Binding::findOperation()

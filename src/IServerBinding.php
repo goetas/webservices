@@ -35,7 +35,7 @@ interface IServerBinding extends IBinding {
 	 * @param array $params
 	 * @return \goetas\webservices\Message
 	 */
-	public function reply(Response $response, BindingOperation $bOperation,  array $params);
+	public function reply(Response $response, BindingOperation $bOperation,  array $params, Request $raw);
 	/**
 	 * @return \goetas\webservices\Message
 	 */	

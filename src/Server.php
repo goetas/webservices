@@ -117,7 +117,7 @@ class Server extends Base {
 				if($return!==null){
 					$returnParams[] = $return;
 				}
-				$protocol->reply($response, $bindingOperation, $returnParams );
+				$protocol->reply($response, $bindingOperation, $returnParams , $request);
 			}else{
 				throw new \Exception("Non trovo nessun il metodo '".$bindingOperation->getName()."' su ".get_class($serviceObject));
 			}
