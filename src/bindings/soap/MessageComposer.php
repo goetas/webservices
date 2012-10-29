@@ -1,12 +1,10 @@
 <?php 
 namespace goetas\webservices\bindings\soap;
+use Goetas\XmlXsdEncoder\LitteralEncoder;
+
 use goetas\webservices\bindings\soap\style\DocumentStyle;
 
 use goetas\webservices\bindings\soap\style\RpcStyle;
-
-use goetas\webservices\bindings\soap\encoder\LitteralEncoder;
-
-use goetas\webservices\bindings\soap\encoder\EncodedEncoder;
 
 use goetas\xml\xsd\SchemaContainer;
 
@@ -73,13 +71,12 @@ class MessageComposer {
 		$encMode = $this->getEncodingMode($message);
 	
 		if($encMode=="encoded"){
-			$encoder = new EncodedEncoder();
+			throw new \Exception("Encoded encoding not yet implemented");
 		}else{
 			$encoder = new LitteralEncoder();
 		}
 		
 		$encoder->addToMappings($this->toMap);
-
 		$encoder->addFromMappings($this->fromMap);
 		$encoder->addFromFallbacks($this->fromFallback);
 		

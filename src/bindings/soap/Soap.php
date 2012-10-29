@@ -2,6 +2,8 @@
 
 namespace goetas\webservices\bindings\soap;
 
+use Goetas\XmlXsdEncoder\EncoderInterface;
+
 use goetas\xml\wsdl\Wsdl;
 
 use goetas\webservices\bindings\soap\style\DocumentStyle;
@@ -66,7 +68,7 @@ abstract class Soap implements IBinding {
 		$this->transport = $this->findTransport($port->getBinding());
 	}
 	protected function addMappings(){
-		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type, Encoder $encoder){
+		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type, EncoderInterface $encoder){
 		
 			$sxml = simplexml_import_dom ($node);
 			

@@ -1,5 +1,7 @@
 <?php 
 namespace goetas\webservices\bindings\soap\style;
+use Goetas\XmlXsdEncoder\EncoderInterface;
+
 use goetas\webservices\bindings\soap\Soap;
 
 use goetas\xml\xsd\SchemaContainer;
@@ -26,7 +28,7 @@ class DocumentStyle implements Style {
 	 */
 	protected $encoder;
 	
-	public function __construct(Encoder $encoder, SchemaContainer $container) {
+	public function __construct(EncoderInterface $encoder, SchemaContainer $container) {
 		$this->encoder = $encoder;
 		$this->container = $container;		
 	}
