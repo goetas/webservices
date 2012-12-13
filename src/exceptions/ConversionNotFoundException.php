@@ -1,6 +1,6 @@
 <?php
 namespace goetas\webservices\exceptions; 
 use Exception;
-class ConversionNotFoundException extends Exception{
+class ConversionNotFoundException extends WebserviceException{
 }
 

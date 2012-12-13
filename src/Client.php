@@ -2,6 +2,8 @@
 
 namespace goetas\webservices;
 
+use goetas\webservices\exceptions\WebserviceException;
+
 use InvalidArgumentException;
 use goetas\xml\wsdl\BindingOperation;
 use goetas\xml\wsdl\BindingMessage;
@@ -29,13 +31,26 @@ class Client extends Base {
 		if(!$serviceNs){
 			$serviceAllNs =  array_keys($services);
 			$serviceNs = reset($serviceAllNs);
+			if(!$serviceNs){
+				throw new WebserviceException("Non trovo nessun servizio");
+			}
 		}
+		
+		
+		
 		if(!$serviceName){
+			
+			if(!$services[$serviceNs]){
+				throw new WebserviceException("Non trovo nessun servizio per il namespace '$serviceNs'");
+			}
+			
 			$serviceAllNames = array_keys($services[$serviceNs]);
 			$serviceName = reset($serviceAllNames);
 		}
 		$service = $services[$serviceNs][$serviceName];
-
+		if(!$services){
+			throw new WebserviceException("Non trovo nessun servizio per il namespace '$serviceNs'#$serviceName");
+		}
 		if(!$servicePort){		
 			foreach ($service->getPorts() as $port) {
 				try {
