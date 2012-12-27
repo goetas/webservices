@@ -1,5 +1,5 @@
 {
-    "name": "goetas/webservicers",
+    "name": "goetas/webservices",
     "description": "Pure PHP SOAP server and client",
     "keywords": ["xsd", "xml", "soap", "webservice"],
     "homepage": "http://opensource.mercuriosistemi.com/projects/show/goetas-webservice",
