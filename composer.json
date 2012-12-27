@@ -1,0 +1,25 @@
+{
+    "name": "goetas/webservicers",
+    "description": "Pure PHP SOAP server and client",
+    "keywords": ["xsd", "xml", "soap", "webservice"],
+    "homepage": "http://opensource.mercuriosistemi.com/projects/show/goetas-webservice",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Asmir Mustafic",
+            "email": "goetas@lignano.it"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "goetas/xmldom": "*",
+        "goetas/goetas-xsd-reader": "*",
+        "goetas/xml-xsd-encoder": "*"
+
+    },
+	"target-dir": "goetas/webservices",
+    "autoload": {
+        "psr-0": { "goetas\\webservices": "" }
+    },
+    "minimum-stability": "dev"
+}
