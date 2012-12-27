@@ -14,7 +14,8 @@
         "php": ">=5.3.2",
         "goetas/xmldom": "*",
         "goetas/goetas-xsd-reader": "*",
-        "goetas/xml-xsd-encoder": "*"
+        "goetas/xml-xsd-encoder": "*",
+		"goetas/wsld-reader": "*"
 
     },
 	"target-dir": "goetas/webservices",
