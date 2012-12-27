@@ -83,10 +83,9 @@ class Server extends Base {
 			$protocol = $this->getBinding($port);
 		}
 
-
-
-
 		$response = new Response();
+		$response->headers->set("Content-Type", "application/soap+xml");
+		
 		try {
 			$parts = array($servicePort,$serviceName,$serviceNs);
 			$c = 0;
@@ -102,7 +101,6 @@ class Server extends Base {
 			if (isset($this->initializers[spl_object_hash($serviceObject)])){
 				call_user_func($this->initializers[spl_object_hash($serviceObject)], $protocol, $port, $this);
 			}
-
 
 			$bindingOperation = $protocol->findOperation($port->getBinding(), $request);
 

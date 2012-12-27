@@ -52,10 +52,10 @@ class MessageComposer {
 	public function decompose(XMLDomElement $body, BindingOperation $operation, BindingMessage $message) {
 		$params = array();
 		$wrapper = $this->getWrapper($operation, $message);
-		
+		$nodes = $body->getElementsByTagName("*");
 		$c = 0;
 		foreach ($message->getMessage()->getParts() as $messagePart){
-			$params[] = $wrapper->unwrap($body->childNodes->item($c), $messagePart);
+			$params[] = $wrapper->unwrap($nodes->item($c), $messagePart);
 			$c++;
 		}
 		return $params;
