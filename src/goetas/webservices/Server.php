@@ -10,7 +10,9 @@ use goetas\webservices\exceptions\UnsuppoportedProtocolException;
 
 use goetas\xml\wsdl\Wsdl;
 use InvalidArgumentException;
-
+/**
+ * Pure PHP Webservices
+ * /
 class Server extends Base {
 	protected $servers = array();
 	protected $initializers = array();
