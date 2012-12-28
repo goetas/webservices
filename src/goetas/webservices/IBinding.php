@@ -19,6 +19,10 @@ use goetas\xml\xsd\SchemaContainer;
 
 use Exception;
 use InvalidArgumentException;
-
+/**
+ * 
+ * @author goetas
+ *
+ */
 interface IBinding {
 }
