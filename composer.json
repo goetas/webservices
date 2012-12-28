@@ -18,9 +18,8 @@
 		"goetas/wsld-reader": "*"
 
     },
-	"target-dir": "goetas/webservices",
     "autoload": {
-        "psr-0": { "goetas\\webservices": "" }
+        "psr-0": { "goetas\\webservices": "src/" }
     },
     "minimum-stability": "dev"
 }
