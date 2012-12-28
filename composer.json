@@ -15,8 +15,7 @@
         "goetas/xmldom": "*",
         "goetas/goetas-xsd-reader": "*",
         "goetas/xml-xsd-encoder": "*",
-		"goetas/wsld-reader": "*"
-
+        "goetas/wsld-reader": "*"
     },
     "autoload": {
         "psr-0": { "goetas\\webservices": "src/" }
