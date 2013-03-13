@@ -212,9 +212,8 @@ class Http implements ITransport{
 
 	}
 	protected function checkCompression(&$xml, array &$headers) {
-
 		if(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='gzip'){
-			$xml = str_repeat(0, 10).gzdeflate($xml);
+			$xml = gzencode ( $xml , 7 , FORCE_GZIP );
 		}elseif(isset($headers["Content-Encoding"]) && $headers["Content-Encoding"]=='deflate'){
 			$xml = gzcompress($xml);
 		}
