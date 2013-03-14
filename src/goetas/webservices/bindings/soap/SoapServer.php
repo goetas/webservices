@@ -95,7 +95,7 @@ class SoapServer extends Soap implements IServerBinding{
 
 		$response->setStatusCode(500);
 		$response->setContent($xml->saveXML());
-		$response->headers->set("Content-Type", "text/xml");
+		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
 
 	}
 
