@@ -56,17 +56,16 @@ class SoapServer extends Soap implements IServerBinding{
 		
 		$encoding = strval($request->headers->get('Accept-Encoding'));
 		
-		if(strpos($encoding, 'gzip')!==false && function_exists('gzdecode')){
+		if(strpos($encoding, 'gzip')!==false && function_exists('gzencode')){
 			$xml = $response->getContent();
 			$response->setContent( gzencode ( $xml , 7 , FORCE_GZIP ));
-			$response->headers->set('Content-Length', strlen($xml));
 			$response->headers->set("Content-Encoding", "gzip");
 		}elseif(strpos($encoding, 'deflate')!==false && function_exists('gzcompress')){
 			$xml = $response->getContent();
 			$response->setContent(gzcompress($xml));
-			$response->headers->set('Content-Length', strlen($xml));
 			$response->headers->set("Content-Encoding", "deflate");
 		}
+		$response->headers->set('Content-Length', strlen($response->getContent()));
 	}
 	/**
 	 * @see goetas\webservices.Binding::findOperation()
