@@ -23,7 +23,6 @@ class Server extends Base {
 		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function (Port $port, $options) {
 			return new bindings\soap\SoapServer($port);
 		});
-
 	}
 	public function addService($proxy, $serviceName = null, $serviceNs = null, $servicePort = null, $callback = null) {
 		if(!is_object($proxy)){
@@ -45,9 +44,8 @@ class Server extends Base {
 		}
 	}
 	/**
-	 * @param Message $raw
 	 * @throws \Exception
-	 * @return goetas\webservices\Message
+	 * @return \Symfony\Component\HttpFoundation\Response
 	 */
 	public function handle(Request $request = null) {
 		if($request===null){
@@ -102,13 +100,10 @@ class Server extends Base {
 			}
 
 			$bindingOperation = $protocol->findOperation($port->getBinding(), $request);
-
 			$parameters = $protocol->getParameters($bindingOperation, $request );
-
 
 			$callable = array($serviceObject, $bindingOperation->getName());
 			if (is_callable($callable)){
-
 				$return = call_user_func_array($callable, $parameters);
 				$returnParams = array();
 				if($return!==null){
