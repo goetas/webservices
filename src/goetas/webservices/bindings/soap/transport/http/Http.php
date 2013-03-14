@@ -132,10 +132,6 @@ class Http implements ITransport{
 		$headers['Accept-Encoding'] = 'gzip, deflate';
 
 
-		//header("Content-type:text/xml; charset=utf-8");
-		//print_r($headers);
-		//echo $message;die();
-
         if (isset($this->options['headers'])) {
             $headers = array_merge($headers, $this->options['headers']);
         }

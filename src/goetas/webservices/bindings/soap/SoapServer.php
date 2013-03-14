@@ -49,7 +49,7 @@ class SoapServer extends Soap implements IServerBinding{
 
 		$xml = $this->buildMessage($params, $bOperation, $outMessage);
 		$response->setContent($xml->saveXML());
-		
+		$response->headers->set("Content-Type", "text/xml");
 		$this->checkForCompression($response, $request);
 	}
 	protected function checkForCompression(Response $response, Request $request){
@@ -98,18 +98,5 @@ class SoapServer extends Soap implements IServerBinding{
 		$response->headers->set("Content-Type", "text/xml");
 
 	}
-	/*
-	 public function reply($message, $isError = false) {
-
-
-    	$response->setMeta("Content-type", $this->getContentType());
-    	$response->setMeta("Content-length", strlen($message));
-    	$response->setMeta("Accept-Encoding", "gzip, deflate");
-
-    	$response->setData($message);
-
-    	return $response;
-    }
-    */
 
 }
