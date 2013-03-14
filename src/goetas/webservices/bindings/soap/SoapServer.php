@@ -44,13 +44,15 @@ class SoapServer extends Soap implements IServerBinding{
 		return $params;
 
 	}
-	public function reply(Response $response, BindingOperation $bOperation,  array $params, Request $request) {
+	public function reply(BindingOperation $bOperation,  array $params, Request $request) {
+		$response = new Response();
 		$outMessage = $bOperation->getOutput();
 
 		$xml = $this->buildMessage($params, $bOperation, $outMessage);
 		$response->setContent($xml->saveXML());
 		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
 		$this->checkForCompression($response, $request);
+		return $response;
 	}
 	protected function checkForCompression(Response $response, Request $request){
 		
@@ -81,8 +83,8 @@ class SoapServer extends Soap implements IServerBinding{
 		return $binding->getOperation($operationName);
 
 	}
-	public function handleServerError(Response $response, \Exception $exception, Port $port){
-
+	public function handleServerError(\Exception $exception, Port $port){
+		$response = new Response();
 		$xml = new XMLDom();
 
 		$envelope = $xml->addChildNS ( self::NS_ENVELOPE, $xml->getPrefixFor ( self::NS_ENVELOPE ) . ':Envelope' );
@@ -96,6 +98,7 @@ class SoapServer extends Soap implements IServerBinding{
 		$response->setStatusCode(500);
 		$response->setContent($xml->saveXML());
 		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
+		return $response;
 
 	}
 

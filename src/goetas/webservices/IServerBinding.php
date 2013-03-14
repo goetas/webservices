@@ -16,28 +16,19 @@ use goetas\webservices\Message as RawMessage;
 
 interface IServerBinding extends IBinding {
 	/**
-	 * 
-	 * @param WsdlBinding $binding
-	 * @param \goetas\webservices\Message $message
 	 * @return \goetas\xml\wsd\BindingOperation
 	 */
 	public function findOperation(Binding $binding, Request $message);
 	/**
-	 * Enter description here ...
-	 * @param BindingOperation $bOperation
-	 * @param RawMessage $raw
 	 * @return array
 	 */
 	public function getParameters(BindingOperation $bOperation, Request $raw);
 	/**
-	 * Enter description here ...
-	 * @param BindingOperation $bOperation
-	 * @param array $params
-	 * @return \goetas\webservices\Message
+	 * @return \Symfony\Component\HttpFoundation\Response
 	 */
-	public function reply(Response $response, BindingOperation $bOperation,  array $params, Request $raw);
+	public function reply(BindingOperation $bOperation,  array $params, Request $raw);
 	/**
-	 * @return \goetas\webservices\Message
+	 * @return \Symfony\Component\HttpFoundation\Response
 	 */	
-	public function handleServerError(Response $response, Exception $exception, Port $port);
+	public function handleServerError(Exception $exception, Port $port);
 }

@@ -84,8 +84,7 @@ class Server extends Base {
 			$port = $service->getPort($servicePort);
 			$protocol = $this->getBinding($port);
 		}
-
-		$response = new Response();		
+	
 		try {
 			$parts = array($servicePort,$serviceName,$serviceNs);
 			$c = 0;
@@ -115,13 +114,12 @@ class Server extends Base {
 				if($return!==null){
 					$returnParams[] = $return;
 				}
-				$protocol->reply($response, $bindingOperation, $returnParams , $request);
+				return $protocol->reply($bindingOperation, $returnParams , $request);
 			}else{
 				throw new \Exception("Non trovo nessun il metodo '".$bindingOperation->getName()."' su ".get_class($serviceObject));
 			}
 		} catch (\Exception $e) {
-			$protocol->handleServerError($response, $e, $port);
+			return $protocol->handleServerError($e, $port);
 		}
-		return $response;
 	}
 }
