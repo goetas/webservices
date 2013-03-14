@@ -34,21 +34,15 @@ class Client extends Base {
 			if(!$serviceNs){
 				throw new WebserviceException("Non trovo nessun servizio");
 			}
-		}
-		
-		
-		
+		}		
 		if(!$serviceName){
-			
 			if(!$services[$serviceNs]){
 				throw new WebserviceException("Non trovo nessun servizio per il namespace '$serviceNs'");
 			}
-			
 			$serviceAllNames = array_keys($services[$serviceNs]);
 			$serviceName = reset($serviceAllNames);
 		}
-		$service = $services[$serviceNs][$serviceName];
-		if(!$services){
+		if(!$service = $services[$serviceNs][$serviceName]){
 			throw new WebserviceException("Non trovo nessun servizio per il namespace '$serviceNs'#$serviceName");
 		}
 		if(!$servicePort){		
@@ -75,8 +69,7 @@ class Client extends Base {
 		$proxyObj->setBinding($binding);
 		$proxyObj->setClient($this);
 		$proxyObj->setPort($port);
-		
-		
+			
 		return $proxyObj;
 	}
 }
