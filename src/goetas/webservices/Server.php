@@ -85,9 +85,7 @@ class Server extends Base {
 			$protocol = $this->getBinding($port);
 		}
 
-		$response = new Response();
-		$response->headers->set("Content-Type", "application/soap+xml");
-		
+		$response = new Response();		
 		try {
 			$parts = array($servicePort,$serviceName,$serviceNs);
 			$c = 0;
