@@ -41,9 +41,8 @@ class SoapClient extends Soap implements IClientBinding{
 		$transport = $this->getTransport($bOperation->getBinding());
 
 		$response = $transport->send($xml->saveXML(), $this->port, $bOperation);
-		$outMessage = $bOperation->getOutput();
 
-		if($outMessage){
+		if($outMessage = $bOperation->getOutput()){
 			try {
 				$retDoc = new XMLDom();
 				$retDoc->loadXMLStrict($response);
