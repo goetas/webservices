@@ -12,10 +12,11 @@
     ],
     "require": {
         "php": ">=5.3.2",
+        
         "goetas/xmldom": "dev-master",
         "goetas/goetas-xsd-reader": "dev-master",
-        "goetas/xml-xsd-encoder": "dev-master",
-        "goetas/wsdl-reader": "dev-master"
+        "goetas/wsdl-reader": "dev-master",
+        "goetas/xml-xsd-encoder": "dev-master"
     },
     "autoload": {
         "psr-0": { "goetas\\webservices": "src/" }
