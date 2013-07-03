@@ -13,15 +13,15 @@ abstract class Base {
 	protected $wsdl;
 	protected $options = array();
 	private $supportedBindings = array();
-	
+
 	public function __construct($wsdl, array $options =array()) {
-		
+
 		if(!($wsdl instanceof Wsdl)){
-			$wsdl = new Wsdl($wsdl);
+			$wsdl = new Wsdl($wsdl, $options["wsdl"]?:array());
 		}
 		$this->wsdl = $wsdl;
 		$this->options = $options;
-		
+
 	}
 	public function getOptions($ns) {
 		if (isset($this->options[$ns])){
@@ -38,7 +38,7 @@ abstract class Base {
 		return $this->options[$ns][$name] = $value;
 	}
 	/**
-	 * 
+	 *
 	 * @return Wsdl
 	 */
 	public function getWsdl() {
@@ -60,7 +60,7 @@ abstract class Base {
 	public function addSupportedBinding($ns, $callback) {
 		$this->supportedBindings[$ns] = $callback;
 	}
-	
+
 	/**
 	 * limita un problema di PHP, ovvero la possibilta ritirare proprieta non definite nella classe
 	 */

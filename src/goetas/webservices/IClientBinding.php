@@ -18,11 +18,11 @@ interface IClientBinding extends IBinding {
 	 */
 	public function findOperation(WsdlBinding $binding, $operationName, array $params);
 	/**
-	 * 
+	 *
 	 * Enter description here ...
 	 * @param BindingOperation $bOperation
 	 * @param array $params
 	 * @return \goetas\webservices\Message
-	 */	
-	public function send(BindingOperation $bOperation, array $params);
+	 */
+	public function send(BindingOperation $bOperation, array $params, array $headers = array());
 }

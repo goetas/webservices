@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace goetas\webservices\bindings\soap;
 use Goetas\XmlXsdEncoder\LitteralEncoder;
 
@@ -18,13 +18,13 @@ use goetas\xml\wsdl\BindingOperation;
 
 class MessageComposer {
 	protected $container;
-	
-	protected $fromMap = array();
-	protected $toMap = array();
-	
-	protected $fromFallback = array();
-	protected $toFallback = array();
-	
+
+	public $fromMap = array();
+	public $toMap = array();
+
+	public $fromFallback = array();
+	public $toFallback = array();
+
 	public function __construct(SchemaContainer $container) {
 		$this->container = $container;
 	}
@@ -38,81 +38,5 @@ class MessageComposer {
 	}
 	public function addFromFallback($ns, $callback) {
 		$this->fromFallback[$ns] = $callback;
-	}
-	public function compose(XMLDomElement $body, BindingOperation $operation, BindingMessage $message, array $params) {
-		
-		$wrapper = $this->getWrapper($operation, $message);
-		$c = 0; 
-		foreach ($message->getMessage()->getParts() as $messagePart){
-			$element = $wrapper->wrap($body, $messagePart, $params[$c]);
-			$c++;
-		}
-	}
-	
-	public function decompose(XMLDomElement $body, BindingOperation $operation, BindingMessage $message) {
-		$params = array();
-		$wrapper = $this->getWrapper($operation, $message);
-		$nodes = $body->getElementsByTagName("*");
-		$c = 0;
-		foreach ($message->getMessage()->getParts() as $messagePart){
-			$params[] = $wrapper->unwrap($nodes->item($c), $messagePart);
-			$c++;
-		}
-		return $params;
-	}
-	/**
-	 * 
-	 * @param BindingOperation $operation
-	 * @param BindingMessage $message
-	 * @return \goetas\webservices\bindings\soap\Style
-	 */
-	protected function getWrapper(BindingOperation $operation, BindingMessage $message) {
-		$style = $this->getStyleMode($operation);
-		$encMode = $this->getEncodingMode($message);
-	
-		if($encMode=="encoded"){
-			throw new \Exception("Encoded encoding not yet implemented");
-		}else{
-			$encoder = new LitteralEncoder();
-		}
-		
-		$encoder->addToMappings($this->toMap);
-		$encoder->addFromMappings($this->fromMap);
-		$encoder->addFromFallbacks($this->fromFallback);
-		
-		
-		if($style=="rpc"){
-			$wrapper = new RpcStyle($encoder, $this->container);
-		}else{
-			$wrapper = new DocumentStyle($encoder, $this->container);
-		}
-		return $wrapper;
-	}
-	/**
-	 *
-	 * "document" or "rpc"
-	 * @param string $bOperation
-	 */
-	protected function getStyleMode(BindingOperation $bOperation) {
-		$style = $bOperation->getDomElement()->evaluate("string(soap:operation/@style)", array("soap"=>Soap::NS));
-		if(!$style){
-			$style = $bOperation->getBinding()->getDomElement()->evaluate("string(soap:binding/@style)", array("soap"=>Soap::NS));
-		}
-		if(!$style){
-			$style = "rpc";
-		}
-		return $style;
-	}
-	/**
-	 *
-	 * litteral or encodes
-	 * @param BindingMessage $message
-	 */
-	protected function getEncodingMode(BindingMessage $message) {
-		$style = $message->getDomElement()->evaluate("string(soap:body/@use)", array("soap"=>Soap::NS));
-		if(!$style){
-			$style = "literal";
-		}
-		return $style;
 	}
 }

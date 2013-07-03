@@ -34,9 +34,8 @@ class SoapClient extends Soap implements IClientBinding{
 		return $binding->getOperation($operationName);
 	}
 
-	public function send(BindingOperation $bOperation, array $params) {
-
-		$xml = $this->buildMessage($params, $bOperation, $bOperation->getInput());
+	public function send(BindingOperation $bOperation, array $params , array $headers = array()) {
+		$xml = $this->buildMessage($params, $bOperation, $bOperation->getInput(), $headers);
 
 		$transport = $this->getTransport($bOperation->getBinding());
 

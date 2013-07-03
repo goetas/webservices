@@ -101,7 +101,7 @@ class Http implements ITransport{
 	 * @return string
 	 */
 	public function send($message, Port $wsdlPort, BindingOperation $bOpetation){
-
+		//die($message);
 		$soapAction = $bOpetation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>Soap::NS));
 
 		$uri = $this->debugUri?:$wsdlPort->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>Soap::NS));
@@ -126,10 +126,20 @@ class Http implements ITransport{
         }
 
         $headers = array();
-        $headers['Content-Type'] = "text/xml; charset=$this->encoding";
+        $headers['Content-Type'] = "text/xml; charset={$this->encoding}";
         $headers['Content-Length'] = strlen($message);
 		$headers['SOAPAction'] = '"' . $soapAction . '"';
-		$headers['Accept-Encoding'] = 'gzip, deflate';
+
+		$acceptedEncoding = array();
+		if(function_exists('gzdecode')){
+			$acceptedEncoding[]='gzip';
+		}
+		if(function_exists('gzuncompress')){
+			$acceptedEncoding[]='deflate';
+		}
+		if($acceptedEncoding){
+			$headers['Accept-Encoding'] = implode(", ", $acceptedEncoding);
+		}
 
 
         if (isset($this->options['headers'])) {
@@ -180,20 +190,13 @@ class Http implements ITransport{
         $this->input = implode("\r\n", $headers)."\r\n".$message;
 
 
-
 		$this->output = curl_exec($ch);
-		//var_dump(htmlentities($this->input));
-		//var_dump($this->output );
-
 
         $info = curl_getinfo($ch);
-        //print_r($info);
 
         curl_close($ch);
 
-
 		$this->checkResponse($info,  $this->output);
-
 
 		if(preg_match ("/^(.*?)\r?\n\r?\n(.*)/sm" , $this->output, $mch)){
 
