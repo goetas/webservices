@@ -16,10 +16,10 @@
         "goetas/xmldom": "dev-master",
         "goetas/goetas-xsd-reader": "dev-master",
         "goetas/wsdl-reader": "dev-master",
-        "goetas/xml-xsd-encoder": "dev-master"
+        "goetas/xml-xsd-encoder": "dev-master",
+        "symfony/http-foundation":"2.*"
     },
     "autoload": {
         "psr-0": { "goetas\\webservices": "src/" }
-    },
-    "minimum-stability": "dev"
+    }
 }
