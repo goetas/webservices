@@ -101,7 +101,7 @@ class Http implements ITransport{
 	 * @return string
 	 */
 	public function send($message, Port $wsdlPort, BindingOperation $bOpetation){
-		//die($message);
+
 		$soapAction = $bOpetation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>Soap::NS));
 
 		$uri = $this->debugUri?:$wsdlPort->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>Soap::NS));

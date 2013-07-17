@@ -1,10 +1,11 @@
 <?php
 namespace goetas\webservices\bindings\soap\style;
+use goetas\webservices\bindings\soap\MessageComposer;
+
 use goetas\xml\wsdl\Message;
 
 use goetas\xml\wsdl\BindingMessage;
 
-use Goetas\XmlXsdEncoder\EncoderInterface;
 
 use goetas\webservices\bindings\soap\Soap;
 
@@ -23,21 +24,9 @@ use goetas\xml\XMLDomElement;
 
 use goetas\xml\wsdl\BindingOperation;
 
-class DocumentStyle implements Style {
-
-	protected $container;
-	/**
-	 *
-	 * @var \goetas\webservices\bindings\soap\Encoder
-	 */
-	protected $encoder;
-
-	public function __construct(EncoderInterface $encoder, SchemaContainer $container) {
-		$this->encoder = $encoder;
-		$this->container = $container;
-	}
-	public function getEncoder() {
-		return $this->encoder;
+class DocumentStyle extends AbstractStyle {
+	public function supports($style){
+		return $style=="document";
 	}
 	public function wrapHeader(XMLDomElement $header, BindingOperation $operation, MessagePart $messagePart, $param){
 		return $this->wrapPart($header, $messagePart, $param);
@@ -65,7 +54,7 @@ class DocumentStyle implements Style {
 
 				$typeDef = $this->container->getType($type[0],$type[1]);
 			}
-			$params[] = $this->encoder->decode( $node, $typeDef);
+			$params[] = $this->composer->decode( $node, $typeDef);
 			$c++;
 		}
 		return $params;
@@ -93,7 +82,7 @@ class DocumentStyle implements Style {
 			$typeDef = $this->container->getType($type[0], $type[1]);
 		}
 
-		$this->encoder->encode( $value , $node, $typeDef);
+		$this->composer->encode( $value , $node, $typeDef);
 
 	}
 }
