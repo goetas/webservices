@@ -16,7 +16,7 @@
         "goetas/xmldom": "dev-master",
         "goetas/goetas-xsd-reader": "dev-master",
         "goetas/wsdl-reader": "dev-master",
-        "goetas/xml-xsd-encoder": "2.*"
+        "goetas/xml-xsd-encoder": "2.*",
         "symfony/http-foundation":"2.*"
     },
     "autoload": {
