@@ -22,7 +22,9 @@
     "autoload": {
         "psr-0": { "goetas\\webservices": "src/" }
     },
-    "branch-alias": {
-        "dev-master": "2.0-dev"
+    "extra":{
+        "branch-alias": {
+            "dev-master": "2.0-dev"
+        }
     }
 }
