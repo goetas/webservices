@@ -2,6 +2,12 @@
 
 namespace goetas\webservices\bindings\soap;
 
+use Goetas\XmlXsdEncoder\LitteralDecoder;
+
+use Goetas\XmlXsdEncoder\XsdStandardDecoder;
+
+use Goetas\XmlXsdEncoder\XsdStandardEncoder;
+
 use Goetas\XmlXsdEncoder\LitteralEncoder;
 
 use Goetas\XmlXsdEncoder\EncoderInterface;
@@ -32,13 +38,9 @@ abstract class Soap implements IBinding {
 	const NS = 'http://schemas.xmlsoap.org/wsdl/soap/';
 	const NS_ENVELOPE = 'http://schemas.xmlsoap.org/soap/envelope/';
 
+	protected $styles = array();
 	protected $supportedTransports = array ();
 
-	/**
-	 *
-	 * @var \goetas\xml\wsdl\Port\Port
-	 */
-	protected $port;
 	/**
 	 *
 	 * @var \goetas\webservices\bindings\soap\MessageComposer
@@ -68,7 +70,7 @@ abstract class Soap implements IBinding {
 		$this->transport = $this->findTransport($port->getBinding());
 	}
 	protected function addMappings(){
-		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type, EncoderInterface $encoder){
+		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node){
 
 			$sxml = simplexml_import_dom ($node);
 
@@ -76,16 +78,16 @@ abstract class Soap implements IBinding {
 
 			return $fault;
 		});
-		/*
-		$this->messageComposer->addToMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node, $type){
+		$this->messageComposer->addFromFallbackLast(new XsdStandardDecoder());
+		$this->messageComposer->addToFallbackLast(new XsdStandardEncoder());
 
-			$sxml = simplexml_import_dom ($node);
+		$this->messageComposer->addFromFallbackLast(new LitteralDecoder($this->messageComposer));
+		$this->messageComposer->addToFallbackLast(new LitteralEncoder($this->messageComposer));
 
-			$fault = new SoapFault($sxml->faultcode, $sxml->faultstring);
 
-			return $fault;
-		});
-		*/
+		$this->addStyle(new RpcStyle());
+		$this->addStyle(new DocumentStyle());
+
 	}
 	protected function findTransport(Binding $binding){
 		$transportNs = $binding->getDomElement ()->evaluate ( "string(soap:binding/@transport)", array ("soap" => self::NS) );
@@ -171,7 +173,6 @@ abstract class Soap implements IBinding {
 	}
 
 	//////////////////////////////////////////////
-
 	/**
 	 *
 	 * @param BindingOperation $operation
@@ -185,32 +186,32 @@ abstract class Soap implements IBinding {
 		if($encMode=="encoded"){
 			throw new \Exception("Encoded encoding not yet implemented");
 		}else{
-			$encoder = new LitteralEncoder();
+			//$encoder = new LitteralEncoder();
 		}
+		return "litteral";
 
-		$encoder->addToMappings($this->getMessageComposer()->toMap);
-		$encoder->addFromMappings($this->getMessageComposer()->fromMap);
-		$encoder->addFromFallbacks($this->getMessageComposer()->fromFallback);
-
-		return $encoder;
 	}
-
 	/**
-	 *
 	 * @param BindingOperation $operation
 	 * @param BindingMessage $message
 	 * @return \goetas\webservices\bindings\soap\Style
 	 */
-	protected function getStyle(EncoderInterface $encoder, BindingOperation $operation) {
+	protected function getStyle($encoder, BindingOperation $operation) {
 
-		$style = $operation->getDomElement()->evaluate("string((soap:operation/@style|../soap:binding/@style)[1])", array("soap"=>Soap::NS));
+		$styleName = $operation->getDomElement()->evaluate("string((soap:operation/@style|../soap:binding/@style)[1])", array("soap"=>Soap::NS));
+		$styleName = $styleName?:"rpc";
 
-		if($style=="rpc" || !$style){
-			$wrapper = new RpcStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
-		}else{
-			$wrapper = new DocumentStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
+		foreach($this->styles as $style){
+			if($style->supports($styleName)){
+				$style->setMessageComposer($this->getMessageComposer());
+				$style->setSchemaContainer($this->port->getWsdl()->getSchemaContainer());
+				return $style;
+			}
 		}
-		return $wrapper;
+	}
+	public function addStyle(Style $style) {
+		array_unshift($this->styles, $style);
+		return $this;
 	}
 
 }

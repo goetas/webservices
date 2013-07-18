@@ -1,5 +1,7 @@
 <?php
 namespace goetas\webservices\bindings\soap;
+use goetas\xml\xsd\SchemaContainer;
+
 use goetas\xml\wsdl\Message;
 
 use goetas\xml\wsdl\BindingMessage;
@@ -20,8 +22,8 @@ interface Style {
 	public function wrapHeader(XMLDomElement $body, BindingOperation $operation, MessagePart $message, $param);
 	public function unwrapHeader(XMLDomElement $body, BindingOperation $operation, MessagePart $message);
 
-	/**
-	 * @return \goetas\webservices\bindings\soap\Encoder
-	 */
-	public function getEncoder();
+	public function supports($style);
+
+	public function setMessageComposer(MessageComposer $composer);
+	public function setSchemaContainer(SchemaContainer $container);
 }

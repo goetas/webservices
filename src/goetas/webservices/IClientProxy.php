@@ -6,4 +6,5 @@ use goetas\webservices\Binding;
 
 interface IClientProxy {
 
+
 }

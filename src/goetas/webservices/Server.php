@@ -38,6 +38,7 @@ class Server extends Base {
 			$ks = array_keys($services[$serviceNs]);
 			$serviceName = reset($ks);
 		}
+
 		$this->servers[$serviceNs?:"*"][$serviceName?:"*"][$servicePort?:'*']=$proxy;
 		if(is_callable($callback)){
 			$this->initializers[spl_object_hash($proxy)]=$callback;
@@ -82,9 +83,11 @@ class Server extends Base {
 			$port = $service->getPort($servicePort);
 			$protocol = $this->getBinding($port);
 		}
-	
+
+
 		try {
 			$parts = array($servicePort,$serviceName,$serviceNs);
+
 			$c = 0;
 			do{
 				$serviceObject = $this->servers[$parts[2]][$parts[1]][$parts[0]];
@@ -100,6 +103,7 @@ class Server extends Base {
 			}
 
 			$bindingOperation = $protocol->findOperation($port->getBinding(), $request);
+
 			$parameters = $protocol->getParameters($bindingOperation, $request );
 
 			$callable = array($serviceObject, $bindingOperation->getName());
