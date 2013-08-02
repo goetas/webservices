@@ -31,6 +31,7 @@ use goetas\xml\XMLDomElement;
 use goetas\xml\XMLDom;
 
 class SoapServer extends Soap implements IServerBinding{
+
 	public function getParameters(BindingOperation $bOperation, Request $request) {
 		$message = $bOperation->getInput();
 
@@ -44,62 +45,42 @@ class SoapServer extends Soap implements IServerBinding{
 		return $params;
 
 	}
-	public function reply(BindingOperation $bOperation,  array $params, Request $request) {
-		$response = new Response();
-		$outMessage = $bOperation->getOutput();
+	/**
+	 * @return \Symfony\Component\HttpFoundation\Response
+	 */
 
-		$xml = $this->buildMessage($params, $bOperation, $outMessage);
-		$response->setContent($xml->saveXML());
-		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
-		$this->checkForCompression($response, $request);
-		return $response;
-	}
-	protected function checkForCompression(Response $response, Request $request){
-		
-		$encoding = strval($request->headers->get('Accept-Encoding'));
-		
-		if(strpos($encoding, 'gzip')!==false && function_exists('gzencode')){
-			$xml = $response->getContent();
-			$response->setContent( gzencode ( $xml , 7 , FORCE_GZIP ));
-			$response->headers->set("Content-Encoding", "gzip");
-		}elseif(strpos($encoding, 'deflate')!==false && function_exists('gzcompress')){
-			$xml = $response->getContent();
-			$response->setContent(gzcompress($xml));
-			$response->headers->set("Content-Encoding", "deflate");
-		}
-		$response->headers->set('Content-Length', strlen($response->getContent()));
+	public function reply(BindingOperation $bOperation,  array $params, Request $request) {
+		$xml = $this->buildMessage($params, $bOperation, $bOperation->getOutput());
+		return $this->createResponse($xml->saveXML());
 	}
 	/**
 	 * @see goetas\webservices.Binding::findOperation()
 	 * @return \goetas\xml\wsd\BindingOperation
 	 */
 	public function findOperation(WsdlBinding $binding, Request $request){
-
-		$action = trim($request->headers->get("SoapAction"), '"');
-
-		if(strlen($action)){
-			$operationName = $binding->getDomElement()->evaluate("string(//soap:operation[@soapAction='$action']/../@name)", array("soap"=>self::NS));
-		}
+		$operationName = $this->getTransport()->findAction($binding, $request);
 		return $binding->getOperation($operationName);
-
 	}
 	public function handleServerError(\Exception $exception, Port $port){
-		$response = new Response();
+
 		$xml = new XMLDom();
 
-		$envelope = $xml->addChildNS ( self::NS_ENVELOPE, $xml->getPrefixFor ( self::NS_ENVELOPE ) . ':Envelope' );
+		$envelope = $xml->addChildNS ( static::NS_ENVELOPE, $xml->getPrefixFor ( static::NS_ENVELOPE ) . ':Envelope' );
 
-		$body = $envelope->addChildNS ( self::NS_ENVELOPE, 'Body' );
-		$fault = $body->addChildNS ( self::NS_ENVELOPE, 'Fault' );
+		$body = $envelope->addChildNS ( static::NS_ENVELOPE, 'Body' );
+		$fault = $body->addChildNS ( static::NS_ENVELOPE, 'Fault' );
 
 		$fault->addChild("faultcode", "soap:Server" );
 		$fault->addChild("faultstring", get_class($exception).": ".$exception->getMessage()."\n".$exception );
 
-		$response->setStatusCode(500);
-		$response->setContent($xml->saveXML());
-		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
-		return $response;
+		return $this->createResponse($xml->saveXML(), 500);
+	}
 
+	private function createResponse($message, $status = 200) {
+		$response = new Response($message, $status);
+		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
+		$response->headers->set("Content-Length", strlen($message));
+		return $response;
 	}
 
 }

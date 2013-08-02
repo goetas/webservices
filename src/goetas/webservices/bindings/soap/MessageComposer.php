@@ -6,7 +6,6 @@ use goetas\xml\xsd\Type;
 use goetas\xml\xsd\SchemaContainer;
 
 class MessageComposer {
-
 	public $fromMap = array();
 	public $toMap = array();
 

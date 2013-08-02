@@ -20,8 +20,11 @@ class Server extends Base {
 	public function __construct($wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
 
-		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function (Port $port, $options) {
+		$this->addSupportedBinding(bindings\soap\SoapServer::NS, function (Port $port, $options) {
 			return new bindings\soap\SoapServer($port);
+		});
+		$this->addSupportedBinding(bindings\soap12\SoapServer::NS, function (Port $port, $options) {
+			return new bindings\soap12\SoapServer($port);
 		});
 	}
 	public function addService($proxy, $serviceName = null, $serviceNs = null, $servicePort = null, $callback = null) {

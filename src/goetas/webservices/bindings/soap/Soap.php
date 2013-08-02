@@ -39,8 +39,6 @@ abstract class Soap implements IBinding {
 	const NS_ENVELOPE = 'http://schemas.xmlsoap.org/soap/envelope/';
 
 	protected $styles = array();
-	protected $supportedTransports = array ();
-
 	/**
 	 *
 	 * @var \goetas\webservices\bindings\soap\MessageComposer
@@ -49,25 +47,18 @@ abstract class Soap implements IBinding {
 
 	/**
 	 *
-	 * @var \goetas\webservices\bindings\soap\transport\ITransport
+	 * @var \goetas\xml\wsdl\Port
 	 */
-	protected $transport;
-
+	protected $port;
 	public function __construct(Port $port) {
-
-		$this->supportedTransports ["http://schemas.xmlsoap.org/soap/http"] = function () {
-			return new transport\http\Http ();
-		};
 
 		$this->port = $port;
 
-		$port->getWsdl()->getSchemaContainer()->addFinderFile ( self::NS_ENVELOPE, __DIR__ . "/res/soap-env.xsd" );
+		$port->getWsdl()->getSchemaContainer()->addFinderFile ( static::NS_ENVELOPE, __DIR__ . "/res/soap-env.xsd" );
 
 		$this->messageComposer = new MessageComposer ( $port->getWsdl()->getSchemaContainer() );
 
 		$this->addMappings();
-
-		$this->transport = $this->findTransport($port->getBinding());
 	}
 	protected function addMappings(){
 		$this->messageComposer->addFromMap('http://schemas.xmlsoap.org/soap/envelope/', 'Fault', function (\DOMNode $node){
@@ -89,15 +80,6 @@ abstract class Soap implements IBinding {
 		$this->addStyle(new DocumentStyle());
 
 	}
-	protected function findTransport(Binding $binding){
-		$transportNs = $binding->getDomElement ()->evaluate ( "string(soap:binding/@transport)", array ("soap" => self::NS) );
-
-		if (isset ( $this->supportedTransports [$transportNs] )) {
-			return call_user_func($this->supportedTransports [$transportNs] );
-		}else{
-			throw new UnsuppoportedTransportException ( "Nessun trasporto compatibile con $transportNs" );
-		}
-	}
 	/**
 	 *
 	 * @return \goetas\webservices\bindings\soap\MessageComposer
@@ -105,18 +87,9 @@ abstract class Soap implements IBinding {
 	public function getMessageComposer() {
 		return $this->messageComposer ;
 	}
-
-	/**
-	 *
-	 * @return \goetas\webservices\bindings\soap\transport\ITransport
-	 */
-	public function getTransport() {
-		return $this->transport;
-	}
-
 	protected function getEnvelopeParts(XMLDom $doc) {
 		foreach ( $doc->documentElement->childNodes as $node ) {
-			if($node->namespaceURI == self::NS_ENVELOPE){
+			if($node->namespaceURI == static::NS_ENVELOPE){
 				switch ($node->localName) {
 					case "Header" :
 						$head = $node;
@@ -132,12 +105,12 @@ abstract class Soap implements IBinding {
 	protected function buildMessage(array $params, BindingOperation $bOperation, BindingMessage $messageInOut, array $headers = array()) {
 		$xml = new XMLDom ();
 
-		$envelope = $xml->addChildNS ( self::NS_ENVELOPE, $xml->getPrefixFor ( self::NS_ENVELOPE ) . ':Envelope' );
+		$envelope = $xml->addChildNS ( static::NS_ENVELOPE, $xml->getPrefixFor ( static::NS_ENVELOPE ) . ':Envelope' );
 
-		$headerDefs = $messageInOut->getDomElement()->getElementsByTagNameNS (  self::NS, 'header' );
+		$headerDefs = $messageInOut->getDomElement()->getElementsByTagNameNS (  static::NS, 'header' );
 
 		if(count($headers) && $headerDefs->length){
-			$head = $envelope->addChildNS ( self::NS_ENVELOPE , 'Header' );
+			$head = $envelope->addChildNS ( static::NS_ENVELOPE , 'Header' );
 
 			$encoder = $this->getEncoder($messageInOut, 'header');
 			$style = $this->getStyle($encoder, $bOperation, $messageInOut);
@@ -159,7 +132,7 @@ abstract class Soap implements IBinding {
 			}
 		}
 
-		$body = $envelope->addChildNS ( self::NS_ENVELOPE, 'Body' );
+		$body = $envelope->addChildNS ( static::NS_ENVELOPE, 'Body' );
 
 		$encoder = $this->getEncoder($messageInOut, 'body');
 		$style = $this->getStyle($encoder, $bOperation, $messageInOut);
@@ -181,7 +154,7 @@ abstract class Soap implements IBinding {
 	 */
 	protected function getEncoder(BindingMessage $message, $part) {
 
-		$encMode = $message->getDomElement()->evaluate("string(soap:{$part}/@use)", array("soap"=>Soap::NS));
+		$encMode = $message->getDomElement()->evaluate("string(soap:{$part}/@use)", array("soap"=>static::NS));
 
 		if($encMode=="encoded"){
 			throw new \Exception("Encoded encoding not yet implemented");
@@ -198,7 +171,7 @@ abstract class Soap implements IBinding {
 	 */
 	protected function getStyle($encoder, BindingOperation $operation) {
 
-		$styleName = $operation->getDomElement()->evaluate("string((soap:operation/@style|../soap:binding/@style)[1])", array("soap"=>Soap::NS));
+		$styleName = $operation->getDomElement()->evaluate("string((soap:operation/@style|../soap:binding/@style)[1])", array("soap"=>static::NS));
 		$styleName = $styleName?:"rpc";
 
 		foreach($this->styles as $style){

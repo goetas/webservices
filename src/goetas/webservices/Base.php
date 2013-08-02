@@ -51,11 +51,11 @@ abstract class Base {
 	 */
 	protected function getBinding(Port $port) {
 		foreach ($this->supportedBindings as $ns => $callback) {
-			if($port->getDomElement()->query("//*[namespace-uri()='$ns']")->length){
+			if($port->getDomElement()->query(".//*[namespace-uri()='$ns']")->length){
 				return call_user_func($callback, $port, $this->getOptions($ns));
 			}
 		}
-		throw new UnsuppoportedProtocolException("Nessun protocolo compatibile");
+		throw new UnsuppoportedProtocolException("Nessun protocolo compatibile per la porta '{{$port->getNs()}}#{$port->getName()}'");
 	}
 	public function addSupportedBinding($ns, $callback) {
 		$this->supportedBindings[$ns] = $callback;

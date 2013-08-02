@@ -18,17 +18,17 @@ interface IServerBinding extends IBinding {
 	/**
 	 * @return \goetas\xml\wsd\BindingOperation
 	 */
-	public function findOperation(Binding $binding, Request $message);
+	public function findOperation(Binding $binding, Request $request);
 	/**
 	 * @return array
 	 */
-	public function getParameters(BindingOperation $bOperation, Request $raw);
+	public function getParameters(BindingOperation $bOperation, Request $request);
 	/**
 	 * @return \Symfony\Component\HttpFoundation\Response
 	 */
-	public function reply(BindingOperation $bOperation,  array $params, Request $raw);
+	public function reply(BindingOperation $bOperation,  array $params, Request $request);
 	/**
 	 * @return \Symfony\Component\HttpFoundation\Response
-	 */	
+	 */
 	public function handleServerError(Exception $exception, Port $port);
 }

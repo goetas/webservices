@@ -1,8 +1,10 @@
 <?php
-namespace goetas\webservices\bindings\soap\transport\http;
+namespace goetas\webservices\bindings\soap12\transport\http;
 
 
-use goetas\webservices\bindings\soap\SoapClient;
+use goetas\webservices\bindings\soap12\SoapClient;
+
+use goetas\webservices\bindings\soap\transport\http\Http as HttpBase;
 
 use Guzzle\Http\Message\EntityEnclosingRequest;
 
@@ -14,31 +16,24 @@ use goetas\xml\wsdl\Port;
 use goetas\webservices\exceptions\TransportException;
 use goetas\webservices\bindings\soap\transport\ITransport;
 
-class Http implements ITransport{
-    protected $debugUri;
-	/**
-	 * @var \Guzzle\Http\Client
-	 */
-	protected $client;
-
-	public function __construct() {
-		$this->client = new Client();
-		$this->client->setDefaultOption('headers', array('Accept-Encoding' => ''));  // curl will set all supported encodings
-	}
-	public function setDebugUri($debugUri) {
-		$this->debugUri = $debugUri;
-	}
+class Http extends HttpBase{
 	/**
 	 * @return string
 	 */
 	public function send($xml, Port $port, BindingOperation $bindingOperation){
 
-	    $url = $this->port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>SoapClient::NS));
 	    $soapAction = $bindingOperation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>SoapClient::NS));
 
+	    if(!$soapAction){
+	        $soapActionRequired = $bindingOperation->getDomElement()->evaluate("string(soap:operation/@soapActionRequired)", array("soap"=>SoapClient::NS));
+	        if($soapActionRequired=="true"){
+	            throw new TransportException("SoapAction required for operation '".$bindingOperation->getName()."'", 100);
+	        }
+	    }
+
+	    $url = $port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>SoapClient::NS));
 		$request = new EntityEnclosingRequest("POST", $url);
-		$request->setBody($xml, "text/xml; charset=utf-8");
-		$request->addHeader("SOAPAction", '"' . $soapAction . '"');
+		$request->setBody($xml, 'application/soap+xml; charset=utf-8;  action="' . $soapAction . '"');
 
 	    if ($this->debugUri){
 	    	$request->setUrl($this->debugUri);

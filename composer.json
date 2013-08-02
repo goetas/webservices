@@ -17,10 +17,19 @@
         "goetas/goetas-xsd-reader": "~1.0",
         "goetas/wsdl-reader": "~1.0",
         "goetas/xml-xsd-encoder": "~2.0",
+
+        "guzzle/guzzle":">=2.0,<4.0-dev",
         "symfony/http-foundation":">=2.1,<2.4-dev"
     },
+	"require-dev": {
+        "phpunit/phpunit": "~3.7"
+    },
+    "minimum-stability": "dev",
     "autoload": {
-        "psr-0": { "goetas\\webservices": "src/" }
+        "psr-0": {
+            "goetas\\webservices\\tests": "tests/",
+         	"goetas\\webservices": "src/"
+        }
     },
     "extra":{
         "branch-alias": {

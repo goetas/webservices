@@ -19,8 +19,11 @@ class Client extends Base {
 	public function __construct($wsdl, array $options =array()) {
 		parent::__construct($wsdl, $options);
 
-		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function(Port $port, $options){
+		$this->addSupportedBinding(bindings\soap\SoapClient::NS, function(Port $port, $options){
 			return new bindings\soap\SoapClient($port);
+		});
+		$this->addSupportedBinding(bindings\soap12\SoapClient::NS, function(Port $port, $options){
+			return new bindings\soap12\SoapClient($port);
 		});
 	}
 
@@ -43,8 +46,9 @@ class Client extends Base {
 			$serviceName = reset($serviceAllNames);
 		}
 		if(!$service = $services[$serviceNs][$serviceName]){
-			throw new WebserviceException("Non trovo nessun servizio per il namespace '$serviceNs'#$serviceName");
+			throw new WebserviceException("Non trovo nessun servizio per il namespace '{{$serviceNs}}#$serviceName'");
 		}
+
 		if(!$servicePort){
 			foreach ($service->getPorts() as $port) {
 				try {
