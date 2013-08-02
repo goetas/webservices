@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="ATal 2.0" default="build-lite">
+    <property file="build/build.properties"/>
+
+    <import file="build/phing/document.xml" />
+    <import file="build/phing/quality.xml" />
+    <import file="build/phing/test.xml" />
+
+    <target name="clean">
+        <phingcall target="clean-lite" />
+    </target>
+
+     <target name="clean-lite">
+        <delete dir="${path.results}" />
+     	<delete file="composer.lock" />
+        <mkdir dir="${path.results}"  />
+        <mkdir dir="${path.results}/logs" />
+
+
+    </target>
+
+    <target name="build">
+        <phingcall target="clean" />
+        <phingcall target="test" />
+        <phingcall target="quality" />
+        <phingcall target="document" />
+    </target>
+	<target name="document">
+        <phingcall target="quality" />
+        <phingcall target="document-internal" />
+    </target>
+
+    <target name="build-lite">
+        <phingcall target="clean-lite" />
+        <phingcall target="test-lite" />
+        <phingcall target="quality-lite" />
+    </target>
+
+</project>

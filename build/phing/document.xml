@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="documentation" default="document-internal">
+    <property file="build/build.properties" />
+
+	<target name="document-internal">
+		<phingcall target="apidocs" />
+		<phingcall target="cb" />
+	</target>
+
+	<target name="apidocs">
+		<delete dir="${path.results}/api" />
+		<mkdir dir="${path.results}/api" />
+        <exec
+			passthru="true"
+			command='phpuml
+						"${path.lib}"
+						-f htmlnew
+						-n Agenzie
+						--no-deployment-view
+						-o "${path.results}/api"'
+			/>
+    </target>
+
+	<target name="cb">
+		<delete dir="${path.results}/code-browser" />
+		<mkdir dir="${path.results}/code-browser" />
+		<mkdir dir="${path.results}/logs" />
+        <exec
+            command='${path.bin}/phpcb
+						--source "${path.lib}"
+						--output "${path.results}/code-browser/"
+						--log "${path.logs}"'
+            passthru="true"
+            checkreturn="false" />
+    </target>
+
+</project>

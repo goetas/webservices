@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<ruleset name="goetas">
+	<description>goetas Standard</description>
+
+	<rule ref="Generic.CodeAnalysis.ForLoopShouldBeWhileLoop"/>
+	<rule ref="Generic.CodeAnalysis.ForLoopWithTestFunctionCall"/>
+	<rule ref="Generic.CodeAnalysis.JumbledIncrementer"/>
+	<rule ref="Generic.CodeAnalysis.UnconditionalIfStatement"/>
+	<rule ref="Generic.CodeAnalysis.UnnecessaryFinalModifier"/>
+	<rule ref="Generic.CodeAnalysis.UselessOverridingMethod"/>
+	<rule ref="Generic.CodeAnalysis.EmptyStatement" />
+ 
+	<rule ref="Generic.Commenting.Todo"/>
+
+	<rule ref="Generic.ControlStructures.InlineControlStructure"/>
+
+	<rule ref="Generic.Files.LineEndings">
+		<properties>
+			<property name="eolChar" value="\n" />
+		</properties>
+	</rule>
+	
+	<rule ref="Generic.Files.LineLength">
+		<properties>
+			<property name="lineLimit" value="500" />
+			<property name="absoluteLineLimit" value="400" />
+		</properties>
+	</rule>
+ 
+	<rule ref="Internal.NoCodeFound" />
+
+	<rule ref="Generic.Formatting.DisallowMultipleStatements"/>
+	<rule ref="Generic.Formatting.MultipleStatementAlignment">
+		<exclude name="Generic.Formatting.MultipleStatementAlignment.NotSameWarning"></exclude>
+	</rule>
+	<rule ref="Generic.Formatting.SpaceAfterCast"/>
+	<rule ref="Generic.Functions.CallTimePassByReference" />
+	<rule ref="Generic.Functions.FunctionCallArgumentSpacing" />
+	<rule ref="Generic.Metrics.NestingLevel" />
+
+	<rule ref="Generic.Functions.OpeningFunctionBraceKernighanRitchie">
+		<exclude name="Generic.Functions.OpeningFunctionBraceKernighanRitchie.SpaceBeforeBrace"/>
+	</rule>
+	<rule ref="PEAR.Functions.ValidDefaultValue"/>
+
+	<rule ref="Generic.NamingConventions.ConstructorName"/>
+	<rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
+	<!-- Escludo questa regola per non avere i warning per la class tipo Attribute_foreach
+	<rule ref="PEAR.NamingConventions.ValidClassName"/>
+	 -->
+	
+
+	<rule ref="Generic.PHP.DisallowShortOpenTag"/>
+	<rule ref="Generic.PHP.DeprecatedFunctions" />
+	<rule ref="Generic.PHP.ForbiddenFunctions" />
+	<rule ref="Generic.PHP.NoSilencedErrors"/>
+	<rule ref="Generic.PHP.LowerCaseConstant"/>
+ 
+
+	<!-- <rule ref="Generic.WhiteSpace.ScopeIndent"/>  -->
+	<rule ref="Squiz.WhiteSpace.SuperfluousWhitespace"/>
+
+</ruleset>

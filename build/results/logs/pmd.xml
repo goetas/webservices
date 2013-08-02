@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<pmd version="@package_version@" timestamp="2013-08-02T10:55:04+02:00">
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/Client.php">
+    <violation beginline="30" endline="71" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="Client" method="getProxy" priority="1">
+      The method getProxy() has a Cyclomatic Complexity of 10. The configured cyclomatic complexity threshold is 8.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/Server.php">
+    <violation beginline="30" endline="49" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="Server" method="addService" priority="1">
+      The method addService() has a Cyclomatic Complexity of 8. The configured cyclomatic complexity threshold is 8.
+    </violation>
+    <violation beginline="30" endline="49" rule="NPathComplexity" ruleset="Code Size Rules" package="goetas\webservices" externalInfoUrl="http://phpmd.org/rules/codesize.html#npathcomplexity" class="Server" method="addService" priority="3">
+      The method addService() has an NPath complexity of 2000. The configured NPath complexity threshold is 200.
+    </violation>
+    <violation beginline="54" endline="126" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="Server" method="handle" priority="1">
+      The method handle() has a Cyclomatic Complexity of 14. The configured cyclomatic complexity threshold is 8.
+    </violation>
+    <violation beginline="54" endline="126" rule="NPathComplexity" ruleset="Code Size Rules" package="goetas\webservices" externalInfoUrl="http://phpmd.org/rules/codesize.html#npathcomplexity" class="Server" method="handle" priority="3">
+      The method handle() has an NPath complexity of 1184. The configured NPath complexity threshold is 200.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/bindings/soap/Soap.php">
+    <violation beginline="36" endline="190" rule="CouplingBetweenObjects" ruleset="Design Rules" package="goetas\webservices\bindings\soap" externalInfoUrl="http://phpmd.org/rules/design.html#couplingbetweenobjects" class="Soap" priority="2">
+      The class Soap has a coupling between objects value of 16. Consider to reduce the number of dependencies under 13.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/bindings/soap/SoapClient.php">
+    <violation beginline="90" endline="90" rule="UnusedLocalVariable" ruleset="Unused Code Rules" externalInfoUrl="http://phpmd.org/rules/unusedcode.html#unusedlocalvariable" priority="3">
+      Avoid unused local variables such as '$head'.
+    </violation>
+    <violation beginline="90" endline="90" rule="UnusedLocalVariable" ruleset="Unused Code Rules" externalInfoUrl="http://phpmd.org/rules/unusedcode.html#unusedlocalvariable" priority="3">
+      Avoid unused local variables such as '$env'.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/bindings/soap/SoapFault.php">
+    <violation beginline="18" endline="25" rule="ExcessiveParameterList" ruleset="Code Size Rules" package="goetas\webservices\bindings\soap" externalInfoUrl="http://phpmd.org/rules/codesize.html#excessiveparameterlist" class="SoapFault" method="__construct" priority="3">
+      The method __construct has 6 parameters. Consider to reduce parameter number under 6.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/bindings/soap/SoapServer.php">
+    <violation beginline="36" endline="36" rule="UnusedLocalVariable" ruleset="Unused Code Rules" externalInfoUrl="http://phpmd.org/rules/unusedcode.html#unusedlocalvariable" priority="3">
+      Avoid unused local variables such as '$message'.
+    </violation>
+    <violation beginline="41" endline="41" rule="UnusedLocalVariable" ruleset="Unused Code Rules" externalInfoUrl="http://phpmd.org/rules/unusedcode.html#unusedlocalvariable" priority="3">
+      Avoid unused local variables such as '$heads'.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/bindings/soap12/SoapServer.php">
+    <violation beginline="12" endline="17" rule="UnusedPrivateMethod" ruleset="Unused Code Rules" package="goetas\webservices\bindings\soap12" externalInfoUrl="http://phpmd.org/rules/unusedcode.html#unusedprivatemethod" class="SoapServer" method="createResponse" priority="3">
+      Avoid unused private methods such as 'createResponse'.
+    </violation>
+  </file>
+  <file name="/home/goetas/gits/webservices/src/goetas/webservices/utils/UrlUtils.php">
+    <violation beginline="3" endline="218" rule="ExcessiveClassComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#excessiveclasscomplexity" class="UrlUtils" priority="3">
+      The class UrlUtils has an overall complexity of 54 which is very high. The configured complexity threshold is 50.
+    </violation>
+    <violation beginline="27" endline="60" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="UrlUtils" method="implode" priority="1">
+      The method implode() has a Cyclomatic Complexity of 11. The configured cyclomatic complexity threshold is 8.
+    </violation>
+    <violation beginline="27" endline="60" rule="NPathComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#npathcomplexity" class="UrlUtils" method="implode" priority="3">
+      The method implode() has an NPath complexity of 1875. The configured NPath complexity threshold is 200.
+    </violation>
+    <violation beginline="119" endline="174" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="UrlUtils" method="resolve_url" priority="1">
+      The method resolve_url() has a Cyclomatic Complexity of 16. The configured cyclomatic complexity threshold is 8.
+    </violation>
+    <violation beginline="119" endline="174" rule="NPathComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#npathcomplexity" class="UrlUtils" method="resolve_url" priority="3">
+      The method resolve_url() has an NPath complexity of 512. The configured NPath complexity threshold is 200.
+    </violation>
+    <violation beginline="175" endline="216" rule="CyclomaticComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#cyclomaticcomplexity" class="UrlUtils" method="unparse_url" priority="1">
+      The method unparse_url() has a Cyclomatic Complexity of 14. The configured cyclomatic complexity threshold is 8.
+    </violation>
+    <violation beginline="175" endline="216" rule="NPathComplexity" ruleset="Code Size Rules" package="goetas\webservices\utils" externalInfoUrl="http://phpmd.org/rules/codesize.html#npathcomplexity" class="UrlUtils" method="unparse_url" priority="3">
+      The method unparse_url() has an NPath complexity of 1512. The configured NPath complexity threshold is 200.
+    </violation>
+  </file>
+</pmd>

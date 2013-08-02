@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Goetas webservices test" tests="3" assertions="41" failures="0" errors="0" time="0.021411">
+    <testsuite name="goetas\webservices\tests\Soap11WeatherClientTest" file="/home/goetas/gits/webservices/tests/goetas/webservices/tests/Soap11WeatherClientTest.php" tests="2" assertions="29" failures="0" errors="0" time="0.019283">
+      <testcase name="testGetWeatherInformation" class="goetas\webservices\tests\Soap11WeatherClientTest" file="/home/goetas/gits/webservices/tests/goetas/webservices/tests/Soap11WeatherClientTest.php" line="33" assertions="12" time="0.014512"/>
+      <testcase name="testGetCityWeatherByZIP" class="goetas\webservices\tests\Soap11WeatherClientTest" file="/home/goetas/gits/webservices/tests/goetas/webservices/tests/Soap11WeatherClientTest.php" line="48" assertions="17" time="0.004771"/>
+    </testsuite>
+    <testsuite name="goetas\webservices\tests\Soap12WeatherClientTest" file="/home/goetas/gits/webservices/tests/goetas/webservices/tests/Soap12WeatherClientTest.php" tests="1" assertions="12" failures="0" errors="0" time="0.002128">
+      <testcase name="testGetWeatherInformation" class="goetas\webservices\tests\Soap12WeatherClientTest" file="/home/goetas/gits/webservices/tests/goetas/webservices/tests/Soap12WeatherClientTest.php" line="33" assertions="12" time="0.002128"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

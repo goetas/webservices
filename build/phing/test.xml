@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="tests" default="test">
+    <property file="build/build.properties" />
+
+    <target name="test">
+        <phingcall target="lint" />
+        <phingcall target="unit" />
+    </target>
+
+    <target name="test-lite">
+        <phingcall target="unit" />
+    </target>
+
+    <target name="unit">
+        <mkdir dir="${path.logs}" />
+        <exec
+            passthru="true"
+            checkreturn="true"
+            command='phpunit --log-junit "${path.logs}/junit.xml"
+                       --configuration "phpunit.xml.dist"'
+        />
+    </target>
+
+
+    <target name="lint">
+        <phplint haltonfailure="true" deprecatedAsError="true">
+            <fileset dir="${path.lib}">
+                <include name="**/*.php" />
+            </fileset>
+        </phplint>
+    </target>
+
+</project>
