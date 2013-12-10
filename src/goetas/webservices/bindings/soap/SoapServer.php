@@ -7,80 +7,72 @@ use Symfony\Component\HttpFoundation\Request;
 
 use goetas\webservices\IServerBinding;
 
-use goetas\webservices\Base;
-
-use goetas\webservices\bindings\soap\UnsuppoportedTransportException;
 use goetas\webservices\Binding;
-use goetas\webservices\Client;
 use goetas\xml\wsdl\BindingOperation;
-use goetas\xml\wsdl\BindingMessage;
 use goetas\xml\wsdl\Binding as WsdlBinding;
 use goetas\xml\wsdl\Message;
-use goetas\xml\wsdl\MessagePart;
 use goetas\xml\wsdl\Port;
-
-use goetas\webservices\Message as RawMessage;
-
-use SoapFault;
-
-use goetas\webservices\bindings\soaptransport\ISoapTransport;
-use goetas\webservices\bindings\soaptransport;
-
-use goetas\xml\XMLDomElement;
 
 use goetas\xml\XMLDom;
 
-class SoapServer extends Soap implements IServerBinding{
+class SoapServer extends Soap implements IServerBinding
+{
+    public function getParameters(BindingOperation $bOperation, Request $request)
+    {
+        $message = $bOperation->getInput();
 
-	public function getParameters(BindingOperation $bOperation, Request $request) {
-		$message = $bOperation->getInput();
+        $dom = new XMLDom();
+        $dom->loadXMLStrict($request->getContent());
 
-		$dom = new XMLDom();
-		$dom->loadXMLStrict($request->getContent());
+        list($heads, $body) = $this->getEnvelopeParts($dom);
 
-		list($heads, $body) = $this->getEnvelopeParts($dom);
+        $params = $this->decodeMessage($body, $bOperation,  $bOperation->getInput());
 
-		$params = $this->decodeMessage($body, $bOperation,  $bOperation->getInput());
+        return $params;
 
-		return $params;
+    }
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
 
-	}
-	/**
-	 * @return \Symfony\Component\HttpFoundation\Response
-	 */
+    public function reply(BindingOperation $bOperation,  array $params, Request $request)
+    {
+        $xml = $this->buildMessage($params, $bOperation, $bOperation->getOutput());
 
-	public function reply(BindingOperation $bOperation,  array $params, Request $request) {
-		$xml = $this->buildMessage($params, $bOperation, $bOperation->getOutput());
-		return $this->createResponse($xml->saveXML());
-	}
-	/**
-	 * @see goetas\webservices.Binding::findOperation()
-	 * @return \goetas\xml\wsd\BindingOperation
-	 */
-	public function findOperation(WsdlBinding $binding, Request $request){
-		$operationName = $this->getTransport()->findAction($binding, $request);
-		return $binding->getOperation($operationName);
-	}
-	public function handleServerError(\Exception $exception, Port $port){
+        return $this->createResponse($xml->saveXML());
+    }
+    /**
+     * @see goetas\webservices.Binding::findOperation()
+     * @return \goetas\xml\wsd\BindingOperation
+     */
+    public function findOperation(WsdlBinding $binding, Request $request)
+    {
+        $operationName = $this->getTransport()->findAction($binding, $request);
 
-		$xml = new XMLDom();
+        return $binding->getOperation($operationName);
+    }
+    public function handleServerError(\Exception $exception, Port $port)
+    {
+        $xml = new XMLDom();
 
-		$envelope = $xml->addChildNS ( static::NS_ENVELOPE, $xml->getPrefixFor ( static::NS_ENVELOPE ) . ':Envelope' );
+        $envelope = $xml->addChildNS ( static::NS_ENVELOPE, $xml->getPrefixFor ( static::NS_ENVELOPE ) . ':Envelope' );
 
-		$body = $envelope->addChildNS ( static::NS_ENVELOPE, 'Body' );
-		$fault = $body->addChildNS ( static::NS_ENVELOPE, 'Fault' );
+        $body = $envelope->addChildNS ( static::NS_ENVELOPE, 'Body' );
+        $fault = $body->addChildNS ( static::NS_ENVELOPE, 'Fault' );
 
-		$fault->addChild("faultcode", "soap:Server" );
-		$fault->addChild("faultstring", get_class($exception).": ".$exception->getMessage()."\n".$exception );
+        $fault->addChild("faultcode", "soap:Server" );
+        $fault->addChild("faultstring", get_class($exception).": ".$exception->getMessage()."\n".$exception );
 
-		return $this->createResponse($xml->saveXML(), 500);
-	}
+        return $this->createResponse($xml->saveXML(), 500);
+    }
 
-	private function createResponse($message, $status = 200) {
-		$response = new Response($message, $status);
-		$response->headers->set("Content-Type", "text/xml; charset=utf-8");
-		$response->headers->set("Content-Length", strlen($message));
-		return $response;
-	}
+    private function createResponse($message, $status = 200)
+    {
+        $response = new Response($message, $status);
+        $response->headers->set("Content-Type", "text/xml; charset=utf-8");
+        $response->headers->set("Content-Length", strlen($message));
+
+        return $response;
+    }
 
 }

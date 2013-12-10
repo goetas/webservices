@@ -1,35 +1,28 @@
 <?php
 namespace goetas\webservices\tests;
 
-use goetas\webservices\tests\transport\FakeTransport;
-
-use goetas\webservices\Client;
-
-use goetas\webservices\Server;
-
-abstract class AbstractXmlTest extends \PHPUnit_Framework_TestCase{
-
-    public function assertEqualXML(\DOMElement $expectedElement, \DOMElement $actualElement, $message = '') {
+abstract class AbstractXmlTest extends \PHPUnit_Framework_TestCase
+{
+    public function assertEqualXML(\DOMElement $expectedElement, \DOMElement $actualElement, $message = '')
+    {
             self::assertEquals(
-	          $expectedElement->localName,
-	          $actualElement->localName,
-	          $message
-	        );
+              $expectedElement->localName,
+              $actualElement->localName,
+              $message
+            );
             self::assertEquals(
-	          $expectedElement->namespaceURI,
-	          $actualElement->namespaceURI,
-	          $message
-	        );
+              $expectedElement->namespaceURI,
+              $actualElement->namespaceURI,
+              $message
+            );
             self::assertEquals($expectedElement->attributes->length, $actualElement->attributes->length,
                     sprintf(
-	                '%s%sNumber of attributes on node "%s" does not match',
-	                $message,
-	                !empty($message) ? "\n" : '',
-	                $expectedElement->tagName
-	              )
+                    '%s%sNumber of attributes on node "%s" does not match',
+                    $message,
+                    !empty($message) ? "\n" : '',
+                    $expectedElement->tagName
+                  )
             );
-
-
 
             for ($i = 0 ; $i < $expectedElement->attributes->length; $i++) {
                 $expectedAttribute = $expectedElement->attributes->item($i);
@@ -44,26 +37,26 @@ abstract class AbstractXmlTest extends \PHPUnit_Framework_TestCase{
 
             self::assertEquals($expectedElement->childNodes->length, $actualElement->childNodes->length,
                     sprintf(
-	                '%s%sNumber of child nodes on node "%s" does not match',
-	                $message,
-	                !empty($message) ? "\n" : '',
-	                $expectedElement->tagName
-	              )
+                    '%s%sNumber of child nodes on node "%s" does not match',
+                    $message,
+                    !empty($message) ? "\n" : '',
+                    $expectedElement->tagName
+                  )
             );
 
             for ($i = 0; $i < $expectedElement->childNodes->length; $i++) {
                 $newExpectedNode = $expectedElement->childNodes->item($i);
-                if($newExpectedNode instanceof \DOMElement){
+                if ($newExpectedNode instanceof \DOMElement) {
                     $this->assertEqualXML($newExpectedNode,$actualElement->childNodes->item($i),$message);
-                }else{
+                } else {
                     self::assertEquals($newExpectedNode->nodeValue, $actualElement->childNodes->item($i)->nodeValue,
-		                    sprintf(
-			                '%s%Contents of node "%s" does not match',
-			                $message,
-			                !empty($message) ? "\n" : '',
-			                $newExpectedNode->tagName
-			              )
-		            );
+                            sprintf(
+                            '%s%Contents of node "%s" does not match',
+                            $message,
+                            !empty($message) ? "\n" : '',
+                            $newExpectedNode->tagName
+                          )
+                    );
                 }
 
             }
@@ -75,7 +68,7 @@ abstract class AbstractXmlTest extends \PHPUnit_Framework_TestCase{
             for ($i = $node->childNodes->length - 1; $i >= 0; $i--) {
                 $child = $node->childNodes->item($i);
                 if ($child instanceof \DOMCharacterData) {
-                    if(!strlen(trim($child->data))){
+                    if (!strlen(trim($child->data))) {
                         $node->removeChild($child);
                     }
                 }

@@ -13,6 +13,7 @@ use goetas\xml\wsdl\Port;
 
 use goetas\webservices\exceptions\TransportException;
 use goetas\webservices\bindings\soap\transport\ITransport;
+use Guzzle\Http\Exception\BadResponseException;
 
 class Http implements ITransport{
     protected $debugUri;
@@ -33,7 +34,7 @@ class Http implements ITransport{
 	 */
 	public function send($xml, Port $port, BindingOperation $bindingOperation){
 
-	    $url = $this->port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>SoapClient::NS));
+	    $url = $port->getDomElement()->evaluate("string(soap:address/@location)", array("soap"=>SoapClient::NS));
 	    $soapAction = $bindingOperation->getDomElement()->evaluate("string(soap:operation/@soapAction)", array("soap"=>SoapClient::NS));
 
 		$request = new EntityEnclosingRequest("POST", $url);
@@ -43,9 +44,14 @@ class Http implements ITransport{
 	    if ($this->debugUri){
 	    	$request->setUrl($this->debugUri);
 	    }
-	    $response = $this->client->send($request);
+	    try {
+	        $response = $this->client->send($request);
+	    } catch (BadResponseException $e) {
+            $response = $e->getResponse();
+	    }
 
-	    if(!$response->isSuccessful()){
+
+	    if(!$response->isSuccessful() && strpos($response->getContentType(), '/xml')===false){
 	    	throw new TransportException($response->getReasonPhrase(), $response->getStatusCode());
 	    }
 

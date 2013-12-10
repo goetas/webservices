@@ -1,6 +1,5 @@
 <?php
 namespace goetas\webservices\exceptions;
-use Exception;
-class UnsuppoportedTransportException extends WebserviceException{
+class UnsuppoportedTransportException extends WebserviceException
+{
 }
-

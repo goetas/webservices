@@ -1,6 +1,5 @@
 <?php
-namespace goetas\webservices\exceptions; 
-use Exception;
-class UnsuppoportedProtocolException extends WebserviceException{
+namespace goetas\webservices\exceptions;
+class UnsuppoportedProtocolException extends WebserviceException
+{
 }
-
