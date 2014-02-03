@@ -2,3 +2,6 @@ webservices
 ===========
 
 Pure PHP SOAP server and client
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/goetas/webservices/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
