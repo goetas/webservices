@@ -14,7 +14,7 @@
         "php": ">=5.3.2",
 
         "goetas/xmldom": "~1.0",
-        "goetas/goetas-xsd-reader": "~1.0",
+        "goetas/goetas-xsd-reader": "~0.1",
         "goetas/wsdl-reader": "~1.0",
         "goetas/xml-xsd-encoder": "~2.0",
 
