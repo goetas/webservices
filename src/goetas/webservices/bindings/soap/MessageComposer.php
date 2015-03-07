@@ -1,8 +1,5 @@
 <?php
 namespace goetas\webservices\bindings\soap;
-use Goetas\XmlXsdEncoder\LitteralEncoder;
-
-use goetas\webservices\bindings\soap\style\DocumentStyle;
 
 use goetas\webservices\bindings\soap\style\RpcStyle;
 

@@ -4,13 +4,9 @@ use goetas\xml\wsdl\Message;
 
 use goetas\xml\wsdl\BindingMessage;
 
-use Goetas\XmlXsdEncoder\EncoderInterface;
-
 use goetas\webservices\bindings\soap\Soap;
 
 use goetas\xml\xsd\SchemaContainer;
-
-use goetas\webservices\bindings\soap\Encoder;
 
 use goetas\webservices\bindings\soap\Style;
 
@@ -19,7 +15,6 @@ use goetas\xml\wsdl\xsd\Element;
 use goetas\xml\wsdl\MessagePart;
 
 use goetas\xml\XMLDomElement;
-
 
 use goetas\xml\wsdl\BindingOperation;
 
