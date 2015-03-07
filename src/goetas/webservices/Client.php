@@ -17,10 +17,11 @@ class Client extends Base {
 	protected $proxies = array();
 
 	public function __construct($wsdl, array $options =array()) {
+
 		parent::__construct($wsdl, $options);
 
 		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function(Port $port, $options){
-			return new bindings\soap\SoapClient($port);
+			return new bindings\soap\SoapClient($port, $options['wrapped']);
 		});
 	}
 
