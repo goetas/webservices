@@ -26,6 +26,7 @@ use goetas\webservices\bindings\soaptransport\ISoapTransport;
 use goetas\webservices\bindings\soaptransport;
 use goetas\xml\XMLDomElement;
 use goetas\xml\XMLDom;
+use goetas\webservices\bindings\soap\style\WrappedDocumentStyle;
 
 abstract class Soap implements IBinding {
 
@@ -51,8 +52,10 @@ abstract class Soap implements IBinding {
 	 */
 	protected $transport;
 
-	public function __construct(Port $port) {
+	protected $wrappedDocument = false;
 
+	public function __construct(Port $port, $wrapped = false) {
+	    $this->wrappedDocument = $wrapped;
 		$this->supportedTransports ["http://schemas.xmlsoap.org/soap/http"] = function () {
 			return new transport\http\Http ();
 		};
@@ -207,6 +210,8 @@ abstract class Soap implements IBinding {
 
 		if($style=="rpc" || !$style){
 			$wrapper = new RpcStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
+		}elseif ($this->wrappedDocument){
+			$wrapper = new WrappedDocumentStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
 		}else{
 			$wrapper = new DocumentStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
 		}
