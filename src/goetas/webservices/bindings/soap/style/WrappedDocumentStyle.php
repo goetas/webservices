@@ -85,7 +85,7 @@ class WrappedDocumentStyle implements Style
             }
             foreach ($node->childNodes as $node2) {
                 if ($node2 instanceof \DOMElement) {
-                    return [$this->encoder->decode($node2, $typeDef)];
+                    return array($this->encoder->decode($node2, $typeDef));
                 }
             }
         }
@@ -103,7 +103,8 @@ class WrappedDocumentStyle implements Style
             throw new Exception("The message does not look wrapped");
         }
 
-        $xsdElType = $this->container->getElement($part->getElement()[0],$part->getElement()[1]);
+        $element = $part->getElement();
+        $xsdElType = $this->container->getElement($element[0], $element[1]);
 
         $this->encoder->addToMap($xsdElType->getNs(), $xsdElType->getName(), array($this, 'toXmlMicrosoftMapper'));
 
