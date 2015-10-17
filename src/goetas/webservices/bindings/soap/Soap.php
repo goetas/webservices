@@ -52,10 +52,10 @@ abstract class Soap implements IBinding {
 	 */
 	protected $transport;
 
-	protected $wrappedDocument = false;
+	protected $options = array();
 
-	public function __construct(Port $port, $wrapped = false) {
-	    $this->wrappedDocument = $wrapped;
+	public function __construct(Port $port, array $options = array()) {
+	    $this->options = $options;
 		$this->supportedTransports ["http://schemas.xmlsoap.org/soap/http"] = function () {
 			return new transport\http\Http ();
 		};
@@ -188,7 +188,7 @@ abstract class Soap implements IBinding {
 		if($encMode=="encoded"){
 			throw new \Exception("Encoded encoding not yet implemented");
 		}else{
-			$encoder = new LitteralEncoder();
+			$encoder = new LitteralEncoder(!empty($this->options['allowUnqualifiedElements']));
 		}
 
 		$encoder->addToMappings($this->getMessageComposer()->toMap);
@@ -210,7 +210,7 @@ abstract class Soap implements IBinding {
 
 		if($style=="rpc" || !$style){
 			$wrapper = new RpcStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
-		}elseif ($this->wrappedDocument){
+		}elseif (!empty($this->options['wrapped'])){
 			$wrapper = new WrappedDocumentStyle($encoder, $this->port->getWsdl()->getSchemaContainer());
 		}else{
 			$wrapper = new DocumentStyle($encoder, $this->port->getWsdl()->getSchemaContainer());

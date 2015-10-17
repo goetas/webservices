@@ -21,7 +21,7 @@ class Client extends Base {
 		parent::__construct($wsdl, $options);
 
 		$this->addSupportedBinding("http://schemas.xmlsoap.org/wsdl/soap/", function(Port $port, $options){
-			return new bindings\soap\SoapClient($port, $options['wrapped']);
+			return new bindings\soap\SoapClient($port, $options);
 		});
 	}
 
