@@ -42,7 +42,6 @@ class SoapServer extends Soap implements IServerBinding{
 		$params = $this->decodeMessage($body, $bOperation,  $bOperation->getInput());
 
 		return $params;
-
 	}
 	public function reply(BindingOperation $bOperation,  array $params, Request $request) {
 		$response = new Response();
