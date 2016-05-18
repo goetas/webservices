@@ -2,6 +2,7 @@
 
 namespace GoetasWebservices\SoapServices\Tests;
 
+use Gen\ConvertHistoricalValue;
 use Gen\ConvertHistoricalValueResponse;
 use Gen\Envelope\Messages\ConvertHistoricalValueOutput;
 use Gen\ExchangeConversionType;
@@ -94,22 +95,32 @@ class MainTest extends \PHPUnit_Framework_TestCase
 
         $body = new Stream('php://memory', 'w');
         $body->write($r);
+        $body->rewind();
 
         $request = new ServerRequest([], [], null, 'POST', $body, ['Soap-Action' => 'http://www.xignite.com/services/ConvertHistoricalValue']);
 
         $service = $definitions->getService('XigniteCurrencies');
         $port = $service->getPort('XigniteCurrenciesSoap');
 
-        $h = new \stdClass();
+        $h = function($asOfDate, $amount){
+            $c = new ExchangeConversionType();
+            $c->setAmount(6666);
+            return $c;
+        };
 
-        $this->server->handle($request, $this->soapReader->getSoapServiceByPort($port), $h);
+        $response = $this->server->handle($request, $this->soapReader->getSoapServiceByPort($port), $h);
+        var_dump($response->getBody()->getContents());
     }
 }
 
 class HttpFactory implements HttpMessageFactoryInterface
 {
-    public function getResponseMessage()
+    public function getResponseMessage($xml)
     {
-        return new Response();
+        $body = new Stream('php://memory', 'w');
+        $body->write($xml);
+        $body->rewind();
+        $response = new Response();
+        return $response->withBody($body);
     }
 }

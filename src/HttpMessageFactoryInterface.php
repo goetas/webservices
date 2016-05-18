@@ -3,5 +3,5 @@ namespace GoetasWebservices\SoapServices;
 
 interface HttpMessageFactoryInterface
 {
-    public function getResponseMessage();
+    public function getResponseMessage($xml);
 }

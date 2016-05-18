@@ -48,15 +48,65 @@ class Server
         $soapOperation = $serviceDefinition->findByAction($action);
         $wsdlOperation = $soapOperation->getOperation();
 
-        $message = $this->extractParams($request, $soapOperation, $soapOperation->getInput(), 'input');
+        $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
+
+        $message = $this->extractParams($request, $inputClass);
         $arguments = $this->expandArguments($message);
 
-        $function = [$handler, Inflector::camelize($wsdlOperation->getName())];
+        $function = is_callable($handler) ? $handler : [$handler, Inflector::camelize($wsdlOperation->getName())];
+
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
 
         $result = call_user_func_array($function, $arguments);
 
-        return $this->reply($result, $this->httpFactory->getResponseMessage(), $soapOperation->getOutput());
+        $result = $this->wrapResult($result, $soapOperation);
+
+        return $this->reply($result, $soapOperation->getOutput());
+    }
+
+    private function wrapResult($input, Operation $operation)
+    {
+        $envelopeClass = $this->findClassName($operation, $operation->getOutput(), 'Output');
+        if (!$input instanceof $envelopeClass) {
+
+            $instantiator = new \Doctrine\Instantiator\Instantiator();
+
+            $envelopeObject = $instantiator->instantiate($envelopeClass);
+
+            $bodyClass = $class = $this->findClassName($operation, $operation->getOutput(), 'Output', '\\Envelope\\Parts\\');
+            if ($input !== null && !$input instanceof $bodyClass) {
+
+                $bodyObject = $instantiator->instantiate($bodyClass);
+
+                if (method_exists($bodyObject, 'setParameters')) {
+
+                    $ref = new \ReflectionMethod($bodyObject, 'setParameters');
+                    /**
+                     * @var $partClass \ReflectionClass
+                     */
+                    $partClass = $ref->getParameters()[0]->getType()->getClass();
+
+                    if (!$partClass->isInstance($input)) {
+                        $partObject = $instantiator->instantiate($bodyClass);
+                        $method = $partClass->getMethods(ReflectionMethod::IS_PUBLIC)[0];
+                        $partObject->setConvertHistoricalValueResult($input);
+                        $method->invoke($partObject);
+                    } else {
+                        $partObject = $input;
+                    }
+                    $bodyObject->setParameters($partObject);
+                }
+
+            } else {
+                $bodyObject = $input;
+            }
+            $envelopeObject->setBody($bodyObject);
+
+        } else {
+            $envelopeObject = $input;
+        }
+
+        return $envelopeObject;
     }
 
     private function getObjectProperties($object)
@@ -73,53 +123,59 @@ class Server
         return $args;
     }
 
-    public function expandArguments($envelope)
+    private function smartAdd($arguments, $messageItems)
     {
-        $smartAdd = function ($arguments, $messageItems) {
-            foreach ($messageItems as $name => $messageItem) {
-                if (isset($arguments[$name])) {
-                    $arguments[] = $arguments[$name];
-                    $arguments[$name] = $messageItem;
-                } else {
-                    $arguments[$name] = $messageItem;
-                }
-            }
-            return $arguments;
-        };
-        $arguments = [$envelope];
-        $envelopeItems = $this->getObjectProperties($envelope);
-        $arguments = $smartAdd ($arguments, $envelopeItems);
-
-        foreach ($envelopeItems as $envelopeItem) {
-            $messageSubItems = $this->getObjectProperties($envelopeItem);
-            $arguments = $smartAdd ($arguments, $messageSubItems);
-            foreach ($messageSubItems as $messageSubSubItems) {
-                $messageSubSubItems = $this->getObjectProperties($messageSubSubItems);
-                $arguments = $smartAdd ($arguments, $messageSubSubItems);
+        foreach ($messageItems as $name => $messageItem) {
+            if (isset($arguments[$name])) {
+                $arguments[] = $arguments[$name];
+                $arguments[$name] = $messageItem;
+            } else {
+                $arguments[$name] = $messageItem;
             }
         }
         return $arguments;
     }
 
-    protected function extractParams(ServerRequestInterface $request, Operation $operation, OperationMessage $operationMessage, $hint = '')
+    private function expandArguments($envelope)
     {
-        $class = $this->namespaces[$operation->getOperation()->getDefinition()->getTargetNamespace()] . '\\Envelope\\Messages\\' .
-            $operationMessage->getMessage()->getOperation()->getName() . ucfirst($hint);
+        $arguments = [$envelope];
+        $envelopeItems = $this->getObjectProperties($envelope);
+        $arguments = $this->smartAdd($arguments, $envelopeItems);
 
+        foreach ($envelopeItems as $envelopeItem) {
+            $messageSubItems = $this->getObjectProperties($envelopeItem);
+            $arguments = $this->smartAdd($arguments, $messageSubItems);
+            foreach ($messageSubItems as $messageSubSubItems) {
+                $messageSubSubItems = $this->getObjectProperties($messageSubSubItems);
+                $arguments = $this->smartAdd($arguments, $messageSubSubItems);
+            }
+        }
+        return $arguments;
+    }
+
+    protected function findClassName(
+        Operation $operation,
+        OperationMessage $operationMessage,
+        $hint,
+        $envelopePart = '\\Envelope\\Messages\\'
+    )
+    {
+        return $this->namespaces[$operation->getOperation()->getDefinition()->getTargetNamespace()]
+        . $envelopePart
+        . $operationMessage->getMessage()->getOperation()->getName()
+        . $hint;
+    }
+
+    protected function extractParams(ServerRequestInterface $request, $class)
+    {
         $message = $this->serializer->deserialize((string)$request->getBody(), $class, 'xml');
-
         return $message;
     }
 
-    public function reply($params, ResponseInterface $response, OperationMessage $operationMessage)
+    protected function reply($envelope, OperationMessage $operationMessage)
     {
-        $body = new Message();
-        $headers = new Message();
-        $envelope = new Envelope($body, $headers);
-
         $message = $this->serializer->serialize($envelope, 'xml');
-        return $response
-            ->withAddedHeader("Content-Type", "text/xml; charset=utf-8")
-            ->withBody($message);
+        $response = $this->httpFactory->getResponseMessage($message);
+        return $response->withAddedHeader("Content-Type", "text/xml; charset=utf-8");
     }
 }
