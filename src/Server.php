@@ -3,8 +3,6 @@ namespace GoetasWebservices\SoapServices;
 
 use ArgumentsResolver\InDepthArgumentsResolver;
 use Doctrine\Common\Util\Inflector;
-use GoetasWebservices\SoapServices\Envelope\Envelope;
-use GoetasWebservices\SoapServices\Envelope\Message;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
@@ -44,24 +42,26 @@ class Server
      */
     public function handle(ServerRequestInterface $request, Service $serviceDefinition, $handler)
     {
-        $action = trim($request->getHeaderLine('Soap-Action'), '"');
-        $soapOperation = $serviceDefinition->findByAction($action);
+        $soapOperation = $this->findOperation($request, $serviceDefinition);
         $wsdlOperation = $soapOperation->getOperation();
-
-        $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
-
-        $message = $this->extractParams($request, $inputClass);
-        $arguments = $this->expandArguments($message);
 
         $function = is_callable($handler) ? $handler : [$handler, Inflector::camelize($wsdlOperation->getName())];
 
+        $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
+        $message = $this->extractMessage($request, $inputClass);
+        $arguments = $this->expandArguments($message);
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
 
         $result = call_user_func_array($function, $arguments);
-
         $result = $this->wrapResult($result, $soapOperation);
 
-        return $this->reply($result, $soapOperation->getOutput());
+        return $this->reply($result);
+    }
+
+    private function findOperation(ServerRequestInterface $request, Service $serviceDefinition)
+    {
+        $action = trim($request->getHeaderLine('Soap-Action'), '"');
+        return $serviceDefinition->findByAction($action);
     }
 
     private function wrapResult($input, Operation $operation)
@@ -166,13 +166,13 @@ class Server
         . $hint;
     }
 
-    protected function extractParams(ServerRequestInterface $request, $class)
+    protected function extractMessage(ServerRequestInterface $request, $class)
     {
         $message = $this->serializer->deserialize((string)$request->getBody(), $class, 'xml');
         return $message;
     }
 
-    protected function reply($envelope, OperationMessage $operationMessage)
+    protected function reply($envelope)
     {
         $message = $this->serializer->serialize($envelope, 'xml');
         $response = $this->httpFactory->getResponseMessage($message);
