@@ -1,7 +1,7 @@
 <?php
 namespace GoetasWebservices\SoapServices;
 
-interface HttpMessageFactoryInterface
+interface MessageFactoryInterfaceFactory
 {
     public function getResponseMessage($xml);
 }

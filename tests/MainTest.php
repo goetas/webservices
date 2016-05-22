@@ -2,31 +2,23 @@
 
 namespace GoetasWebservices\SoapServices\Tests;
 
-use Gen\ConvertHistoricalValue;
-use Gen\ConvertHistoricalValueResponse;
-use Gen\Envelope\Messages\ConvertHistoricalValueOutput;
 use Gen\ExchangeConversionType;
-use GoetasWebservices\SoapServices\HttpMessageFactoryInterface;
+use GoetasWebservices\SoapServices\Message\DiactorosFactory;
 use GoetasWebservices\SoapServices\Server;
+use GoetasWebservices\SoapServices\ServerFactory;
 use GoetasWebservices\XML\SOAPReader\SoapReader;
 use GoetasWebservices\XML\WSDLReader\DefinitionsReader;
-use JMS\Serializer\SerializerBuilder;
-use Symfony\Component\EventDispatcher\EventDispatcher;
+
 use Zend\Diactoros\Request;
 use Zend\Diactoros\Response;
 use Zend\Diactoros\ServerRequest;
-use Zend\Diactoros\Stream;
 
 class MainTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @var SoapReader
+     * @var ServerFactory
      */
-    protected $soapReader;
-    /**
-     * @var DefinitionsReader
-     */
-    protected $wsdl;
+    protected $factory;
     /**
      * @var Server
      */
@@ -34,37 +26,22 @@ class MainTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
-        $builder = SerializerBuilder::create();
-        $builder->addMetadataDir(__DIR__."/../gen2", "Gen");
+        $factory = new ServerFactory();
 
-        $serializer = $builder->build();
-        /*
-        $o = new ConvertHistoricalValueOutput();
-        $p = new \Gen\Envelope\Parts\ConvertHistoricalValueOutput();
-        $pr = new ConvertHistoricalValueResponse();
-        $ct = new ExchangeConversionType();
-        $ct->setAmount(6666);
-        $pr->setConvertHistoricalValueResult($ct);
-        $p->setParameters($pr);
-        $o->setBody($p);
-        var_dump($serializer->serialize($o, 'xml'));
-            exit;
-        */
-        $httpFactory = new HttpFactory();
-        $this->server = new Server($serializer, $httpFactory);
-        $this->server->addNamespace('http://www.xignite.com/services/', 'Gen');
+        $metadata = [
+            __DIR__ . "/../gen2" => "Gen"
+        ];
+        $namespaces = [
+            "http://www.xignite.com/services/" => "Gen"
+        ];
 
-        $dispatcher = new EventDispatcher();
-        $this->wsdl = new DefinitionsReader(null, $dispatcher);
-
-        $this->soapReader = new SoapReader();
-        $dispatcher->addSubscriber($this->soapReader);
+        $this->server = $factory->getServer($metadata, $namespaces);
+        $this->factory = $factory;
     }
 
     public function testMe()
     {
-
-        $definitions = $this->wsdl->readFile(__DIR__. '/complex.wsdl');
+        list($definitions, $soapReader) = $this->factory->getSoap(__DIR__ . '/complex.wsdl');
         $r = '<?xml version="1.0" encoding="UTF-8"?>
 <soapenv:Envelope
  xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
@@ -93,34 +70,19 @@ class MainTest extends \PHPUnit_Framework_TestCase
    </soapenv:Body>
 </soapenv:Envelope>';
 
-        $body = new Stream('php://memory', 'w');
-        $body->write($r);
-        $body->rewind();
+        $body = DiactorosFactory::toStream($r);
 
         $request = new ServerRequest([], [], null, 'POST', $body, ['Soap-Action' => 'http://www.xignite.com/services/ConvertHistoricalValue']);
 
         $service = $definitions->getService('XigniteCurrencies');
         $port = $service->getPort('XigniteCurrenciesSoap');
 
-        $h = function($asOfDate, $amount){
+        $h = function ($asOfDate, $amount) {
             $c = new ExchangeConversionType();
             $c->setAmount(6666);
             return $c;
         };
 
-        $response = $this->server->handle($request, $this->soapReader->getSoapServiceByPort($port), $h);
-        var_dump($response->getBody()->getContents());
-    }
-}
-
-class HttpFactory implements HttpMessageFactoryInterface
-{
-    public function getResponseMessage($xml)
-    {
-        $body = new Stream('php://memory', 'w');
-        $body->write($xml);
-        $body->rewind();
-        $response = new Response();
-        return $response->withBody($body);
+        $response = $this->server->handle($request, $soapReader->getSoapServiceByPort($port), $h);
     }
 }

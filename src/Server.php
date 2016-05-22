@@ -6,14 +6,16 @@ use Doctrine\Common\Util\Inflector;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
-use JMS\Serializer\SerializerInterface;
+use JMS\Serializer\Metadata\ClassMetadata;
+use JMS\Serializer\Metadata\PropertyMetadata;
+use JMS\Serializer\Serializer;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 class Server
 {
     /**
-     * @var SerializerInterface
+     * @var Serializer
      */
     protected $serializer;
 
@@ -22,7 +24,7 @@ class Server
      */
     protected $httpFactory;
 
-    public function __construct(SerializerInterface $serializer, HttpMessageFactoryInterface $httpFactory)
+    public function __construct(Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory)
     {
         $this->serializer = $serializer;
         $this->httpFactory = $httpFactory;
@@ -53,7 +55,9 @@ class Server
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
 
         $result = call_user_func_array($function, $arguments);
-        $result = $this->wrapResult($result, $soapOperation);
+
+        $class = $this->findClassName($soapOperation, $soapOperation->getOutput(), 'Output');
+        $result = $this->wrapResult($result, $class);
 
         return $this->reply($result);
     }
@@ -64,49 +68,48 @@ class Server
         return $serviceDefinition->findByAction($action);
     }
 
-    private function wrapResult($input, Operation $operation)
+    private function wrapResult($input, $class)
     {
-        $envelopeClass = $this->findClassName($operation, $operation->getOutput(), 'Output');
-        if (!$input instanceof $envelopeClass) {
+        if (!$input instanceof $class) {
+            //$instantiator = new \Doctrine\Instantiator\Instantiator();
+            $factory = $this->serializer->getMetadataFactory();
+            $previous = null;
+            $previousProperty = null;
+            $nextClass = $class;
+            $originalInput = $input;
+            $i = 0;
+            while ($i++ < 4) {
+                /**
+                 * @var $classMetadata ClassMetadata
+                 */
+                $classMetadata = $factory->getMetadataForClass($nextClass);
+                if (!$classMetadata->propertyMetadata) {
+                   throw new \Exception("Can not determine how to associate the message");
+                }
+                //$instance = $instantiator->instantiate($classMetadata->name);
+                $instance = new $classMetadata->name();
+                /**
+                 * @var $propertyMetadata PropertyMetadata
+                 */
+                $propertyMetadata = reset($classMetadata->propertyMetadata);
 
-            $instantiator = new \Doctrine\Instantiator\Instantiator();
-
-            $envelopeObject = $instantiator->instantiate($envelopeClass);
-
-            $bodyClass = $class = $this->findClassName($operation, $operation->getOutput(), 'Output', '\\Envelope\\Parts\\');
-            if ($input !== null && !$input instanceof $bodyClass) {
-
-                $bodyObject = $instantiator->instantiate($bodyClass);
-
-                if (method_exists($bodyObject, 'setParameters')) {
-
-                    $ref = new \ReflectionMethod($bodyObject, 'setParameters');
-                    /**
-                     * @var $partClass \ReflectionClass
-                     */
-                    $partClass = $ref->getParameters()[0]->getType()->getClass();
-
-                    if (!$partClass->isInstance($input)) {
-                        $partObject = $instantiator->instantiate($bodyClass);
-                        $method = $partClass->getMethods(ReflectionMethod::IS_PUBLIC)[0];
-                        $partObject->setConvertHistoricalValueResult($input);
-                        $method->invoke($partObject);
-                    } else {
-                        $partObject = $input;
-                    }
-                    $bodyObject->setParameters($partObject);
+                if ($previous) {
+                    $previousProperty->setValue($previous, $instance);
+                } else {
+                    $input = $instance;
                 }
 
-            } else {
-                $bodyObject = $input;
+                if ($originalInput instanceof $propertyMetadata->type['name']) {
+                    $propertyMetadata->setValue($instance, $originalInput);
+                    break;
+                }
+                $previous = $instance;
+                $nextClass = $propertyMetadata->type['name'];
+                $previousProperty = $propertyMetadata;
             }
-            $envelopeObject->setBody($bodyObject);
-
-        } else {
-            $envelopeObject = $input;
         }
 
-        return $envelopeObject;
+        return $input;
     }
 
     private function getObjectProperties($object)
