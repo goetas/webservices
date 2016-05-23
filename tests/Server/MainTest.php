@@ -19,9 +19,8 @@ class MainTest extends \PHPUnit_Framework_TestCase
     /**
      * @var Server
      */
-    protected $server;
-
-    public function setUp()
+    protected static $server;
+    public static function setUpBeforeClass()
     {
         $generator = new Generator();
         $namespaces = [
@@ -32,7 +31,7 @@ class MainTest extends \PHPUnit_Framework_TestCase
         ], $namespaces);
 
         $factory = new ServerFactory($namespaces, $serializer);
-        $this->server = $factory->getServer(__DIR__ . '/res/simple.wsdl');
+        self::$server = $factory->getServer(__DIR__ . '/res/simple.wsdl');
     }
 
     public function testSayHello()
@@ -56,7 +55,7 @@ class MainTest extends \PHPUnit_Framework_TestCase
         $request = new ServerRequest([], [], null, 'POST', DiactorosFactory::toStream($r),
             ['Soap-Action' => 'http://www.example.org/simple/sayHello']
         );
-        $response = $this->server->handle($request, $h);
+        $response = self::$server->handle($request, $h);
         $this->assertXmlStringEqualsXmlString((string)$response->getBody(), '
         <SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
           <SOAP:Body xmlns:ns-a0661db7="http://www.example.org/simple/">
@@ -97,7 +96,7 @@ class MainTest extends \PHPUnit_Framework_TestCase
         $request = new ServerRequest([], [], null, 'POST', DiactorosFactory::toStream($r),
             ['Soap-Action' => 'http://www.example.org/simple/multiHello']
         );
-        $response = $this->server->handle($request, $h);
+        $response = self::$server->handle($request, $h);
 
         $this->assertXmlStringEqualsXmlString((string)$response->getBody(), '
         <SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
@@ -139,8 +138,8 @@ class MainTest extends \PHPUnit_Framework_TestCase
         $request = new ServerRequest([], [], null, 'POST', DiactorosFactory::toStream($r),
             ['Soap-Action' => 'http://www.example.org/simple/sayHelloCool']
         );
-        $response = $this->server->handle($request, $h);
-        echo $response->getBody();
+        $response = self::$server->handle($request, $h);
+
         $this->assertXmlStringEqualsXmlString((string)$response->getBody(), '
         <SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
           <SOAP:Body xmlns:ns-a0661db7="http://www.example.org/simple/">
