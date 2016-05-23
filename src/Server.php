@@ -2,7 +2,7 @@
 namespace GoetasWebservices\SoapServices;
 
 use ArgumentsResolver\InDepthArgumentsResolver;
-use Doctrine\Common\Util\Inflector;
+use Doctrine\Instantiator\Instantiator;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
@@ -24,10 +24,16 @@ class Server
      */
     protected $httpFactory;
 
-    public function __construct(Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory)
+    /**
+     * @var Service
+     */
+    protected $serviceDefinition;
+
+    public function __construct(Service $serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory)
     {
         $this->serializer = $serializer;
         $this->httpFactory = $httpFactory;
+        $this->serviceDefinition = $serviceDefinition;
     }
 
     public function addNamespace($ns, $phpNamespace)
@@ -42,12 +48,19 @@ class Server
      * @param object $handler
      * @return ResponseInterface
      */
-    public function handle(ServerRequestInterface $request, Service $serviceDefinition, $handler)
+    public function handle(ServerRequestInterface $request, $handler)
     {
-        $soapOperation = $this->findOperation($request, $serviceDefinition);
+        $soapOperation = $this->findOperation($request, $this->serviceDefinition);
         $wsdlOperation = $soapOperation->getOperation();
 
-        $function = is_callable($handler) ? $handler : [$handler, Inflector::camelize($wsdlOperation->getName())];
+
+        if (is_callable($handler)) {
+            $function = $handler;
+        } elseif (method_exists($handler, Inflector::camelize($wsdlOperation->getName()))) {
+            $function = [$handler, Inflector::camelize($wsdlOperation->getName())];
+        } else {
+            throw new \Exception("Can not find a valid callback to invoke " . $wsdlOperation->getName());
+        }
 
         $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
         $message = $this->extractMessage($request, $inputClass);
@@ -71,7 +84,7 @@ class Server
     private function wrapResult($input, $class)
     {
         if (!$input instanceof $class) {
-            //$instantiator = new \Doctrine\Instantiator\Instantiator();
+            $instantiator = new Instantiator();
             $factory = $this->serializer->getMetadataFactory();
             $previous = null;
             $previousProperty = null;
@@ -84,10 +97,9 @@ class Server
                  */
                 $classMetadata = $factory->getMetadataForClass($nextClass);
                 if (!$classMetadata->propertyMetadata) {
-                   throw new \Exception("Can not determine how to associate the message");
+                    throw new \Exception("Can not determine how to associate the message");
                 }
-                //$instance = $instantiator->instantiate($classMetadata->name);
-                $instance = new $classMetadata->name();
+                $instance = $instantiator->instantiate($classMetadata->name);
                 /**
                  * @var $propertyMetadata PropertyMetadata
                  */
