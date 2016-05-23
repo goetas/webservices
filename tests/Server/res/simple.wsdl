@@ -83,6 +83,7 @@
     <wsdl:message name="multiHelloResponse">
         <wsdl:part name="parameters" type="xsd:double"></wsdl:part>
         <wsdl:part name="extra-out" type="xsd:string"></wsdl:part>
+        <wsdl:part name="extra-out5" element="tns:multiHelloResponse"></wsdl:part>
     </wsdl:message>
 
     <wsdl:portType name="hello">

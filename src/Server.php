@@ -64,7 +64,7 @@ class Server
 
         $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
         $message = $this->extractMessage($request, $inputClass);
-        var_dump($message);
+
         $arguments = $this->expandArguments($message);
 
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
@@ -97,7 +97,7 @@ class Server
                 /**
                  * @var $classMetadata ClassMetadata
                  */
-                if ($previousProperty && in_array($nextClass, ['string', 'float', 'integer', 'boolean'])) {
+                if ($previousProperty && in_array($nextClass, ['double', 'string', 'float', 'integer', 'boolean'])) {
                     $previousProperty->setValue($previous, $originalInput);
                     break;
                 }
@@ -167,6 +167,9 @@ class Server
             $messageSubItems = $this->getObjectProperties($envelopeItem);
             $arguments = $this->smartAdd($arguments, $messageSubItems);
             foreach ($messageSubItems as $messageSubSubItems) {
+                if (!is_object($messageSubSubItems)) {
+                    continue;
+                }
                 $messageSubSubItems = $this->getObjectProperties($messageSubSubItems);
                 $arguments = $this->smartAdd($arguments, $messageSubSubItems);
             }
