@@ -1,5 +1,5 @@
 <?php
-namespace GoetasWebservices\SoapServices\Tests;
+namespace GoetasWebservices\SoapServices\Tests\Utils;
 
 use Composer\Autoload\ClassLoader;
 use GoetasWebservices\Xsd\XsdToPhp\Jms\PathGenerator\Psr4PathGenerator as JmsPsr4PathGenerator;
@@ -23,7 +23,7 @@ class Generator
 
     public function __construct()
     {
-        $tmp = __DIR__ . '/../tmp';
+        $tmp = __DIR__ . '/../../tmp';
 
         $this->phpDir = "$tmp/php";
         $this->jmsDir = "$tmp/jms";
@@ -86,7 +86,6 @@ class Generator
             $h->registerSubscribingHandler(new XmlSchemaDateHandler());
         });
 
-        $phpDirs = $this->getPhpDirs($namespaces);
         $jmsDirs = $this->getJmsDirs($namespaces);
         foreach (array_combine($namespaces, $jmsDirs) as $ns => $dir) {
             $serializerBuilder->addMetadataDir($dir, $ns);

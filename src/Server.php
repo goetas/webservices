@@ -2,6 +2,7 @@
 namespace GoetasWebservices\SoapServices;
 
 use ArgumentsResolver\InDepthArgumentsResolver;
+use Doctrine\Common\Inflector\Inflector;
 use Doctrine\Instantiator\Instantiator;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
@@ -53,7 +54,6 @@ class Server
         $soapOperation = $this->findOperation($request, $this->serviceDefinition);
         $wsdlOperation = $soapOperation->getOperation();
 
-
         if (is_callable($handler)) {
             $function = $handler;
         } elseif (method_exists($handler, Inflector::camelize($wsdlOperation->getName()))) {
@@ -64,7 +64,9 @@ class Server
 
         $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
         $message = $this->extractMessage($request, $inputClass);
+        var_dump($message);
         $arguments = $this->expandArguments($message);
+
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
 
         $result = call_user_func_array($function, $arguments);
@@ -95,6 +97,10 @@ class Server
                 /**
                  * @var $classMetadata ClassMetadata
                  */
+                if ($previousProperty && in_array($nextClass, ['string', 'float', 'integer', 'boolean'])) {
+                    $previousProperty->setValue($previous, $originalInput);
+                    break;
+                }
                 $classMetadata = $factory->getMetadataForClass($nextClass);
                 if (!$classMetadata->propertyMetadata) {
                     throw new \Exception("Can not determine how to associate the message");
@@ -177,7 +183,7 @@ class Server
     {
         return $this->namespaces[$operation->getOperation()->getDefinition()->getTargetNamespace()]
         . $envelopePart
-        . $operationMessage->getMessage()->getOperation()->getName()
+        . Inflector::classify($operationMessage->getMessage()->getOperation()->getName())
         . $hint;
     }
 

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://www.example.org/simple/"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="simple"
+                  targetNamespace="http://www.example.org/simple/">
+    <wsdl:types>
+        <xsd:schema elementFormDefault="qualified" targetNamespace="http://www.example.org/simple/">
+            <xsd:element name="sayHello">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="in" type="xsd:string" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="sayHelloResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="out" type="xsd:string" />
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="sayHelloCool">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="in" type="tns:info"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="sayHelloCoolResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="out" type="tns:greeting"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+
+            <xsd:complexType name="info">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"></xsd:element>
+                    <xsd:element name="title" type="xsd:string"></xsd:element>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="greeting">
+                <xsd:sequence>
+                    <xsd:element name="user" type="tns:info"></xsd:element>
+                    <xsd:element name="place" type="xsd:string"></xsd:element>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="multiHello">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="in" type="xsd:string"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="multiHelloResponse">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element name="out" type="xsd:string"></xsd:element>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+    </wsdl:types>
+    <wsdl:message name="sayHelloRequest">
+        <wsdl:part element="tns:sayHello" name="parameters" />
+    </wsdl:message>
+    <wsdl:message name="sayHelloResponse">
+        <wsdl:part element="tns:sayHelloResponse" name="parameters" />
+    </wsdl:message>
+    <wsdl:message name="sayHelloCoolRequest">
+        <wsdl:part name="parameters" element="tns:sayHelloCool"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="sayHelloCoolResponse">
+        <wsdl:part name="parameters" element="tns:sayHelloCoolResponse"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="multiHelloRequest">
+        <wsdl:part name="parameters" type="tns:info"></wsdl:part>
+        <wsdl:part name="extra-in" type="xsd:string"></wsdl:part>
+    </wsdl:message>
+    <wsdl:message name="multiHelloResponse">
+        <wsdl:part name="parameters" type="xsd:double"></wsdl:part>
+        <wsdl:part name="extra-out" type="xsd:string"></wsdl:part>
+    </wsdl:message>
+
+    <wsdl:portType name="hello">
+        <wsdl:operation name="sayHello">
+            <wsdl:input message="tns:sayHelloRequest" />
+            <wsdl:output message="tns:sayHelloResponse" />
+        </wsdl:operation>
+        <wsdl:operation name="sayHelloCool">
+            <wsdl:input message="tns:sayHelloCoolRequest"></wsdl:input>
+            <wsdl:output message="tns:sayHelloCoolResponse"></wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="multiHello">
+            <wsdl:input message="tns:multiHelloRequest"></wsdl:input>
+            <wsdl:output message="tns:multiHelloResponse"></wsdl:output>
+        </wsdl:operation>
+    </wsdl:portType>
+    <wsdl:binding name="simpleSOAP" type="tns:hello">
+        <soap:binding style="document"
+                      transport="http://schemas.xmlsoap.org/soap/http" />
+        <wsdl:operation name="sayHello">
+            <soap:operation soapAction="http://www.example.org/simple/sayHello" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="sayHelloCool">
+            <soap:operation soapAction="http://www.example.org/simple/sayHelloCool" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="multiHello">
+            <soap:operation soapAction="http://www.example.org/simple/multiHello" />
+            <wsdl:input>
+                <soap:body use="literal" />
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal" />
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="hello">
+        <wsdl:port binding="tns:simpleSOAP" name="helloSoap">
+            <soap:address location="http://www.example.org/" />
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>

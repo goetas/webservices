@@ -5,6 +5,8 @@ use GoetasWebservices\SoapServices\Message\DiactorosFactory;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
 use GoetasWebservices\XML\SOAPReader\SoapReader;
 use GoetasWebservices\XML\WSDLReader\DefinitionsReader;
+use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\BaseTypesHandler;
+use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\XmlSchemaDateHandler;
 use JMS\Serializer\SerializerBuilder;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -12,6 +14,7 @@ use Symfony\Component\EventDispatcher\EventDispatcher;
 class ServerFactory
 {
     protected $namespaces = [];
+    protected $metadata = [];
     /**
      * @var SerializerInterface
      */
@@ -87,13 +90,34 @@ class ServerFactory
         $this->namespaces[$uri] = $phpNs;
     }
 
+    public function addMetadata($phpNs, $dir)
+    {
+        $this->namespaces[$phpNs] = $dir;
+    }
+
+    protected function buildSerializer()
+    {
+        $serializerBuilder = SerializerBuilder::create();
+        $serializerBuilder->configureHandlers(function (HandlerRegistryInterface $h) use ($serializerBuilder) {
+            $serializerBuilder->addDefaultHandlers();
+            $h->registerSubscribingHandler(new BaseTypesHandler());
+            $h->registerSubscribingHandler(new XmlSchemaDateHandler());
+        });
+
+        foreach ($this->metadata as $ns => $dir) {
+            $serializerBuilder->addMetadataDir($dir, $ns);
+        }
+        return $serializerBuilder->build();
+    }
+
     public function getServer($wsdl, $portName = null, $serviceName = null)
     {
         $messageFactory = $this->messageFactory ?: $this->buildMessageFactory();
+        $serializer = $this->serializer ?: $this->buildSerializer();
 
         $service = $this->getSoapService($wsdl, $portName, $serviceName);
 
-        $server = $this->buildServer($service, $this->serializer, $messageFactory, $this->namespaces);
+        $server = $this->buildServer($service, $serializer, $messageFactory, $this->namespaces);
 
         return $server;
     }
