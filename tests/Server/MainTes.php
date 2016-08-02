@@ -11,10 +11,10 @@ use GoetasWebservices\SoapServices\Tests\SimpleWsdl\GreetingType;
 use GoetasWebservices\SoapServices\Tests\SimpleWsdl\InfoType;
 use GoetasWebservices\SoapServices\Tests\SimpleWsdl\MultiHello;
 use GoetasWebservices\SoapServices\Tests\SimpleWsdl\MultiHelloResponse;
-use GoetasWebservices\SoapServices\Tests\Utils\Generator;
+use GoetasWebservices\SoapServices\Tests\Generator;
 use Zend\Diactoros\ServerRequest;
 
-class MainTest extends \PHPUnit_Framework_TestCase
+class MainTes extends \PHPUnit_Framework_TestCase
 {
     /**
      * @var Server

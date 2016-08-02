@@ -30,13 +30,13 @@
   ],
   "autoload": {
     "psr-4": {
-      "GoetasWebservices\\SoapServices\\": "src/"
+      "GoetasWebservices\\SoapServices\\": "src"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "GoetasWebservices\\SoapServices\\Tests\\": "tests/",
-      "Gen\\": "gen/"
+      "GoetasWebservices\\SoapServices\\Tests\\": "tests",
+      "GoetasWebservices\\Xsd\\XsdToPhp\\Tests\\": "vendor/goetas-webservices/xsd2php/tests"
     }
   },
   "extra": {
