@@ -102,7 +102,9 @@ class Server
                     break;
                 }
                 $classMetadata = $factory->getMetadataForClass($nextClass);
-                if (!$classMetadata->propertyMetadata) {
+                if ($input === null && !$classMetadata->propertyMetadata){
+                    return $instantiator->instantiate($classMetadata->name);
+                } elseif (!$classMetadata->propertyMetadata) {
                     throw new \Exception("Can not determine how to associate the message");
                 }
                 $instance = $instantiator->instantiate($classMetadata->name);
@@ -174,6 +176,7 @@ class Server
                 $arguments = $this->smartAdd($arguments, $messageSubSubItems);
             }
         }
+        //print_r($arguments);
         return $arguments;
     }
 
@@ -181,7 +184,7 @@ class Server
         Operation $operation,
         OperationMessage $operationMessage,
         $hint,
-        $envelopePart = '\\Envelope\\Messages\\'
+        $envelopePart = '\\SoapEnvelope\\Messages\\' // @todo parametrize this
     )
     {
         return $this->namespaces[$operation->getOperation()->getDefinition()->getTargetNamespace()]
