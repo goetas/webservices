@@ -84,7 +84,7 @@ class HeadersServerTest extends AbstractServerTest
         $this->assertXmlStringEqualsXmlString((string)$response->getBody(), $responseString);
     }
 
-    public function testMustUnderstandHeader()
+    public function testNotUnderstandHeader()
     {
         $requestString = trim('
         <soapenv:Envelope

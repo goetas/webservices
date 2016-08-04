@@ -3,12 +3,11 @@ namespace GoetasWebservices\SoapServices;
 
 use GoetasWebservices\SoapServices\Message\DiactorosFactory;
 use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandlerInterface;
-use GoetasWebservices\XML\SOAPReader\Soap\Service;
+use GoetasWebservices\WsdlToPhp\Generation\PhpMetadataGenerator;
 use GoetasWebservices\XML\SOAPReader\SoapReader;
 use GoetasWebservices\XML\WSDLReader\DefinitionsReader;
-use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\BaseTypesHandler;
-use GoetasWebservices\Xsd\XsdToPhpRuntime\Jms\Handler\XmlSchemaDateHandler;
-use JMS\Serializer\SerializerBuilder;
+use GoetasWebservices\XML\WSDLReader\Exception\PortNotFoundException;
+use GoetasWebservices\XML\WSDLReader\Exception\ServiceNotFoundException;
 use JMS\Serializer\SerializerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 
@@ -35,7 +34,7 @@ class ServerFactory
         $this->setSerializer($serializer);
         $this->setHeaderHandler($headerHandler);
 
-        foreach ($namespaces as $namespace => $phpNamespace){
+        foreach ($namespaces as $namespace => $phpNamespace) {
             $this->addNamespace($namespace, $phpNamespace);
         }
     }
@@ -61,16 +60,6 @@ class ServerFactory
         $this->serializer = $serializer;
     }
 
-    protected function buildServer(Service $service)
-    {
-        $server = new Server($service, $this->serializer, $this->messageFactory, $this->headerHandler);
-        foreach ($this->namespaces as $uri => $ns) {
-            $server->addNamespace($uri, $ns);
-        }
-
-        return $server;
-    }
-
     protected function buildMessageFactory()
     {
         return new DiactorosFactory();
@@ -78,26 +67,38 @@ class ServerFactory
 
     private function getSoapService($wsdl, $portName = null, $serviceName = null)
     {
+
+        $generator = new PhpMetadataGenerator();
+        foreach ($this->namespaces as $ns => $phpNs) {
+            $generator->addNamespace($ns, $phpNs);
+        }
+
         $dispatcher = new EventDispatcher();
         $wsdlReader = new DefinitionsReader(null, $dispatcher);
 
         $soapReader = new SoapReader();
         $dispatcher->addSubscriber($soapReader);
-        $definitions = $wsdlReader->readFile($wsdl);
+        $wsdlReader->readFile($wsdl);
 
-        if ($serviceName) {
-            $service = $definitions->getService($serviceName);
+        $services = $generator->generateServices($soapReader->getServices());
+
+        if ($serviceName && isset($services[$serviceName])) {
+            $service = $services[$serviceName];
+        } elseif ($serviceName) {
+            throw new ServiceNotFoundException("The service named $serviceName can not be found");
         } else {
-            $service = reset($definitions->getServices());
+            $service = reset($services);
         }
 
-        if ($portName) {
-            $port = $service->getPort($portName);
+        if ($portName && isset($service[$portName])) {
+            $port = $service[$portName];
+        } elseif ($portName) {
+            throw new PortNotFoundException("The port named $portName can not be found");
         } else {
-            $port = reset($service->getPorts());
+            $port = reset($service);
         }
 
-        return $soapReader->getServiceByPort($port);
+        return $port;
     }
 
     public function addNamespace($uri, $phpNs)
@@ -111,8 +112,6 @@ class ServerFactory
 
         $service = $this->getSoapService($wsdl, $portName, $serviceName);
 
-        $server = $this->buildServer($service);
-
-        return $server;
+        return new Server($service, $this->serializer, $this->messageFactory, $this->headerHandler);
     }
 }

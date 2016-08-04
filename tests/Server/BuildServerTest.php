@@ -36,7 +36,7 @@ class BuildServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException  \GoetasWebservices\XML\WSDLReader\Exception\PortNotFoundException
-     * @expectedExceptionMessage The port named XXX can not be found inside test
+     * @expectedExceptionMessage The port named XXX can not be found
      */
     public function testGetWrongPort()
     {
@@ -45,7 +45,7 @@ class BuildServerTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @expectedException  \GoetasWebservices\XML\WSDLReader\Exception\PortNotFoundException
-     * @expectedExceptionMessage The port named testSOAP can not be found inside alternativeTest
+     * @expectedExceptionMessage The port named testSOAP can not be found
      */
     public function testGetWrongService()
     {

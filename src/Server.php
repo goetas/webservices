@@ -2,16 +2,12 @@
 namespace GoetasWebservices\SoapServices;
 
 use ArgumentsResolver\InDepthArgumentsResolver;
-use Doctrine\Common\Inflector\Inflector;
 use Doctrine\Instantiator\Instantiator;
 use GoetasWebservices\SoapServices\Faults\MustUnderstandException;
 use GoetasWebservices\SoapServices\Faults\ServerException;
 use GoetasWebservices\SoapServices\Faults\SoapServerException;
 use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandlerInterface;
 use GoetasWebservices\SoapServices\SoapEnvelope;
-use GoetasWebservices\XML\SOAPReader\Soap\Operation;
-use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
-use GoetasWebservices\XML\SOAPReader\Soap\Service;
 use JMS\Serializer\Metadata\ClassMetadata;
 use JMS\Serializer\Metadata\PropertyMetadata;
 use JMS\Serializer\Serializer;
@@ -26,7 +22,7 @@ class Server
     protected $serializer;
 
     /**
-     * @var HttpMessageFactoryInterface
+     * @var MessageFactoryInterfaceFactory
      */
     protected $httpFactory;
 
@@ -36,22 +32,16 @@ class Server
     protected $headerHandler;
 
     /**
-     * @var Service
+     * @var array
      */
     protected $serviceDefinition;
 
-    public function __construct(Service $serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory, HeaderHandlerInterface $headerHandler)
+    public function __construct($serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory, HeaderHandlerInterface $headerHandler)
     {
         $this->serializer = $serializer;
         $this->httpFactory = $httpFactory;
         $this->serviceDefinition = $serviceDefinition;
         $this->headerHandler = $headerHandler;
-    }
-
-    public function addNamespace($ns, $phpNamespace)
-    {
-        $this->namespaces[$ns] = $phpNamespace;
-        return $this;
     }
 
     /**
@@ -63,18 +53,16 @@ class Server
     {
         try {
             $soapOperation = $this->findOperation($request, $this->serviceDefinition);
-            $wsdlOperation = $soapOperation->getOperation();
 
             if (is_callable($handler)) {
                 $function = $handler;
-            } elseif (method_exists($handler, Inflector::camelize($wsdlOperation->getName()))) {
-                $function = [$handler, Inflector::camelize($wsdlOperation->getName())];
+            } elseif (method_exists($handler, $soapOperation['method'])) {
+                $function = [$handler, $soapOperation['method']];
             } else {
-                throw new ServerException("Can not find a valid callback to invoke " . $wsdlOperation->getName());
+                throw new ServerException("Can not find a valid callback to invoke " . $soapOperation['method']);
             }
 
-            $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
-            $message = $this->extractMessage($request, $inputClass);
+            $message = $this->extractMessage($request, $soapOperation['input']['fqcn']);
 
             $arguments = $this->expandArguments($message);
 
@@ -108,8 +96,7 @@ class Server
         if (isset($fault)) {
             $wrappedResult = $this->wrapResult($fault, SoapEnvelope\Messages\Fault::class);
         } else {
-            $class = $this->findClassName($soapOperation, $soapOperation->getOutput(), 'Output');
-            $wrappedResult = $this->wrapResult($result, $class);
+            $wrappedResult = $this->wrapResult($result, $soapOperation['output']['fqcn']);
         }
 
         return $this->reply($wrappedResult);
@@ -122,10 +109,19 @@ class Server
         return "{{$classMetadata->xmlRootNamespace}}$classMetadata->xmlRootName";
     }
 
-    private function findOperation(ServerRequestInterface $request, Service $serviceDefinition)
+    /**
+     * @param ServerRequestInterface $request
+     * @param array $service
+     * @return array
+     */
+    private function findOperation(ServerRequestInterface $request, array $service)
     {
         $action = trim($request->getHeaderLine('Soap-Action'), '"');
-        return $serviceDefinition->findByAction($action);
+        foreach ($service['operations'] as $operation) {
+            if ($operation['action'] === $action) {
+                return $operation;
+            }
+        }
     }
 
     private function wrapResult($input, $class)
@@ -221,21 +217,7 @@ class Server
                 $arguments = $this->smartAdd($arguments, $messageSubSubItems);
             }
         }
-        //print_r($arguments);
         return $arguments;
-    }
-
-    protected function findClassName(
-        Operation $operation,
-        OperationMessage $operationMessage,
-        $hint,
-        $envelopePart = '\\SoapEnvelope\\Messages\\' // @todo parametrize this
-    )
-    {
-        return $this->namespaces[$operation->getOperation()->getDefinition()->getTargetNamespace()]
-        . $envelopePart
-        . Inflector::classify($operationMessage->getMessage()->getOperation()->getName())
-        . $hint;
     }
 
     protected function extractMessage(ServerRequestInterface $request, $class)
