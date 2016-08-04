@@ -4,6 +4,11 @@ namespace GoetasWebservices\SoapServices;
 use ArgumentsResolver\InDepthArgumentsResolver;
 use Doctrine\Common\Inflector\Inflector;
 use Doctrine\Instantiator\Instantiator;
+use GoetasWebservices\SoapServices\Faults\MustUnderstandException;
+use GoetasWebservices\SoapServices\Faults\ServerException;
+use GoetasWebservices\SoapServices\Faults\SoapServerException;
+use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandlerInterface;
+use GoetasWebservices\SoapServices\SoapEnvelope;
 use GoetasWebservices\XML\SOAPReader\Soap\Operation;
 use GoetasWebservices\XML\SOAPReader\Soap\OperationMessage;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
@@ -26,15 +31,21 @@ class Server
     protected $httpFactory;
 
     /**
+     * @var HeaderHandlerInterface
+     */
+    protected $headerHandler;
+
+    /**
      * @var Service
      */
     protected $serviceDefinition;
 
-    public function __construct(Service $serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory)
+    public function __construct(Service $serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory, HeaderHandlerInterface $headerHandler)
     {
         $this->serializer = $serializer;
         $this->httpFactory = $httpFactory;
         $this->serviceDefinition = $serviceDefinition;
+        $this->headerHandler = $headerHandler;
     }
 
     public function addNamespace($ns, $phpNamespace)
@@ -45,7 +56,6 @@ class Server
 
     /**
      * @param ServerRequestInterface $request
-     * @param Service $serviceDefinition
      * @param object $handler
      * @return ResponseInterface
      */
@@ -69,12 +79,50 @@ class Server
 
         $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
 
-        $result = call_user_func_array($function, $arguments);
+        $toUnderstand = $this->headerHandler->getHeadersToUnderstand();
+        foreach ($arguments as $argument) {
+            if (is_object($argument)) {
+                unset($toUnderstand[spl_object_hash($argument)]);
+            }
+        }
 
-        $class = $this->findClassName($soapOperation, $soapOperation->getOutput(), 'Output');
+        $fault = null;
+        if (count($toUnderstand)){
+            $e = new MustUnderstandException(
+                "MustUnderstand headers:[".implode(', ', array_map([$this, 'getXmlNamesDescription'], $toUnderstand))."] are not understood"
+            );
+            $fault = new SoapEnvelope\Parts\Fault();
+            $fault->setException($e);
+        } else {
+            try {
+                $result = call_user_func_array($function, $arguments);
+            } catch (\Exception $e) {
+                $fault = new SoapEnvelope\Parts\Fault();
+                if (!$e instanceof SoapServerException){
+                    $e = new ServerException($e->getMessage(), $e->getCode(), $e);
+                }
+                $fault->setException($e);
+                // @todo $fault->setDetail() set detail to trace in debug mode
+                // @todo $fault->setActor() allow to set the current server actor
+            }
+        }
+        $this->headerHandler->resetHeadersToUnderstand();
+        if ($fault) {
+            $class = SoapEnvelope\Messages\Fault::class;
+            $result = $fault;
+        } else {
+            $class = $this->findClassName($soapOperation, $soapOperation->getOutput(), 'Output');
+        }
         $result = $this->wrapResult($result, $class);
 
         return $this->reply($result);
+    }
+
+    private function getXmlNamesDescription($object)
+    {
+        $factory = $this->serializer->getMetadataFactory();
+        $classMetadata = $factory->getMetadataForClass(get_class($object));
+        return "{{$classMetadata->xmlRootNamespace}}$classMetadata->xmlRootName";
     }
 
     private function findOperation(ServerRequestInterface $request, Service $serviceDefinition)

@@ -2,6 +2,7 @@
 namespace GoetasWebservices\SoapServices;
 
 use GoetasWebservices\SoapServices\Message\DiactorosFactory;
+use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandlerInterface;
 use GoetasWebservices\XML\SOAPReader\Soap\Service;
 use GoetasWebservices\XML\SOAPReader\SoapReader;
 use GoetasWebservices\XML\WSDLReader\DefinitionsReader;
@@ -24,13 +25,27 @@ class ServerFactory
      */
     protected $messageFactory;
 
-    public function __construct(array $namespaces, SerializerInterface $serializer)
+    /**
+     * @var HeaderHandlerInterface
+     */
+    protected $headerHandler;
+
+    public function __construct(array $namespaces, SerializerInterface $serializer, HeaderHandlerInterface $headerHandler)
     {
         $this->setSerializer($serializer);
+        $this->setHeaderHandlerInterface($headerHandler);
 
         foreach ($namespaces as $namespace => $phpNamespace){
             $this->addNamespace($namespace, $phpNamespace);
         }
+    }
+
+    /**
+     * @param HeaderHandlerInterface $headerHandler
+     */
+    public function setHeaderHandler(HeaderHandlerInterface $headerHandler)
+    {
+        $this->headerHandler = $headerHandler;
     }
 
     /**
@@ -46,10 +61,10 @@ class ServerFactory
         $this->serializer = $serializer;
     }
 
-    protected function buildServer(Service $service, SerializerInterface $serializer, MessageFactoryInterfaceFactory $messageFactory, array $namespaces)
+    protected function buildServer(Service $service)
     {
-        $server = new Server($service, $serializer, $messageFactory);
-        foreach ($namespaces as $uri => $ns) {
+        $server = new Server($service, $this->serializer, $this->messageFactory, $this->headerHandler);
+        foreach ($this->namespaces as $uri => $ns) {
             $server->addNamespace($uri, $ns);
         }
 
@@ -90,34 +105,13 @@ class ServerFactory
         $this->namespaces[$uri] = $phpNs;
     }
 
-    public function addMetadata($phpNs, $dir)
-    {
-        $this->namespaces[$phpNs] = $dir;
-    }
-
-    protected function buildSerializer()
-    {
-        $serializerBuilder = SerializerBuilder::create();
-        $serializerBuilder->configureHandlers(function (HandlerRegistryInterface $h) use ($serializerBuilder) {
-            $serializerBuilder->addDefaultHandlers();
-            $h->registerSubscribingHandler(new BaseTypesHandler());
-            $h->registerSubscribingHandler(new XmlSchemaDateHandler());
-        });
-
-        foreach ($this->metadata as $ns => $dir) {
-            $serializerBuilder->addMetadataDir($dir, $ns);
-        }
-        return $serializerBuilder->build();
-    }
-
     public function getServer($wsdl, $portName = null, $serviceName = null)
     {
-        $messageFactory = $this->messageFactory ?: $this->buildMessageFactory();
-        $serializer = $this->serializer ?: $this->buildSerializer();
+        $this->messageFactory = $this->messageFactory ?: $this->buildMessageFactory();
 
         $service = $this->getSoapService($wsdl, $portName, $serviceName);
 
-        $server = $this->buildServer($service, $serializer, $messageFactory, $this->namespaces);
+        $server = $this->buildServer($service);
 
         return $server;
     }
