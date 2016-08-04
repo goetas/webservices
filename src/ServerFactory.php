@@ -33,7 +33,7 @@ class ServerFactory
     public function __construct(array $namespaces, SerializerInterface $serializer, HeaderHandlerInterface $headerHandler)
     {
         $this->setSerializer($serializer);
-        $this->setHeaderHandlerInterface($headerHandler);
+        $this->setHeaderHandler($headerHandler);
 
         foreach ($namespaces as $namespace => $phpNamespace){
             $this->addNamespace($namespace, $phpNamespace);

@@ -61,61 +61,58 @@ class Server
      */
     public function handle(ServerRequestInterface $request, $handler)
     {
-        $soapOperation = $this->findOperation($request, $this->serviceDefinition);
-        $wsdlOperation = $soapOperation->getOperation();
+        try {
+            $soapOperation = $this->findOperation($request, $this->serviceDefinition);
+            $wsdlOperation = $soapOperation->getOperation();
 
-        if (is_callable($handler)) {
-            $function = $handler;
-        } elseif (method_exists($handler, Inflector::camelize($wsdlOperation->getName()))) {
-            $function = [$handler, Inflector::camelize($wsdlOperation->getName())];
-        } else {
-            throw new \Exception("Can not find a valid callback to invoke " . $wsdlOperation->getName());
-        }
-
-        $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
-        $message = $this->extractMessage($request, $inputClass);
-
-        $arguments = $this->expandArguments($message);
-
-        $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
-
-        $toUnderstand = $this->headerHandler->getHeadersToUnderstand();
-        foreach ($arguments as $argument) {
-            if (is_object($argument)) {
-                unset($toUnderstand[spl_object_hash($argument)]);
+            if (is_callable($handler)) {
+                $function = $handler;
+            } elseif (method_exists($handler, Inflector::camelize($wsdlOperation->getName()))) {
+                $function = [$handler, Inflector::camelize($wsdlOperation->getName())];
+            } else {
+                throw new ServerException("Can not find a valid callback to invoke " . $wsdlOperation->getName());
             }
-        }
 
-        $fault = null;
-        if (count($toUnderstand)){
-            $e = new MustUnderstandException(
-                "MustUnderstand headers:[".implode(', ', array_map([$this, 'getXmlNamesDescription'], $toUnderstand))."] are not understood"
-            );
-            $fault = new SoapEnvelope\Parts\Fault();
-            $fault->setException($e);
-        } else {
-            try {
-                $result = call_user_func_array($function, $arguments);
-            } catch (\Exception $e) {
-                $fault = new SoapEnvelope\Parts\Fault();
-                if (!$e instanceof SoapServerException){
-                    $e = new ServerException($e->getMessage(), $e->getCode(), $e);
+            $inputClass = $this->findClassName($soapOperation, $soapOperation->getInput(), 'Input');
+            $message = $this->extractMessage($request, $inputClass);
+
+            $arguments = $this->expandArguments($message);
+
+            $arguments = (new InDepthArgumentsResolver($function))->resolve($arguments);
+
+            $toUnderstand = $this->headerHandler->getHeadersToUnderstand();
+            foreach ($arguments as $argument) {
+                if (is_object($argument)) {
+                    unset($toUnderstand[spl_object_hash($argument)]);
                 }
-                $fault->setException($e);
-                // @todo $fault->setDetail() set detail to trace in debug mode
-                // @todo $fault->setActor() allow to set the current server actor
             }
+            $this->headerHandler->resetHeadersToUnderstand();
+
+            if (count($toUnderstand)){
+                throw new MustUnderstandException(
+                    "MustUnderstand headers:[".implode(', ', array_map([$this, 'getXmlNamesDescription'], $toUnderstand))."] are not understood"
+                );
+            }
+
+            $result = call_user_func_array($function, $arguments);
+
+        } catch (\Exception $e) {
+            $fault = new SoapEnvelope\Parts\Fault();
+            if (!$e instanceof SoapServerException){
+                $e = new ServerException($e->getMessage(), $e->getCode(), $e);
+            }
+            $fault->setException($e);
+            // @todo $fault->setDetail() set detail to trace in debug mode
+            // @todo $fault->setActor() allow to set the current server actor
         }
-        $this->headerHandler->resetHeadersToUnderstand();
-        if ($fault) {
-            $class = SoapEnvelope\Messages\Fault::class;
-            $result = $fault;
+        if (isset($fault)) {
+            $wrappedResult = $this->wrapResult($fault, SoapEnvelope\Messages\Fault::class);
         } else {
             $class = $this->findClassName($soapOperation, $soapOperation->getOutput(), 'Output');
+            $wrappedResult = $this->wrapResult($result, $class);
         }
-        $result = $this->wrapResult($result, $class);
 
-        return $this->reply($result);
+        return $this->reply($wrappedResult);
     }
 
     private function getXmlNamesDescription($object)
