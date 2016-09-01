@@ -2,14 +2,13 @@
 namespace GoetasWebservices\SoapServices;
 
 use GoetasWebservices\SoapServices\Message\DiactorosFactory;
+use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandler;
 use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandlerInterface;
-use GoetasWebservices\WsdlToPhp\Generation\PhpMetadataGenerator;
-use GoetasWebservices\XML\SOAPReader\SoapReader;
-use GoetasWebservices\XML\WSDLReader\DefinitionsReader;
+use GoetasWebservices\SoapServices\Metadata\PhpMetadataGenerator;
+use GoetasWebservices\SoapServices\Metadata\PhpMetadataGeneratorInterface;
 use GoetasWebservices\XML\WSDLReader\Exception\PortNotFoundException;
 use GoetasWebservices\XML\WSDLReader\Exception\ServiceNotFoundException;
 use JMS\Serializer\SerializerInterface;
-use Symfony\Component\EventDispatcher\EventDispatcher;
 
 class ServerFactory
 {
@@ -29,10 +28,14 @@ class ServerFactory
      */
     protected $headerHandler;
 
-    public function __construct(array $namespaces, SerializerInterface $serializer, HeaderHandlerInterface $headerHandler)
+    /**
+     * @var PhpMetadataGeneratorInterface
+     */
+    private $generator;
+
+    public function __construct(array $namespaces, SerializerInterface $serializer)
     {
         $this->setSerializer($serializer);
-        $this->setHeaderHandler($headerHandler);
 
         foreach ($namespaces as $namespace => $phpNamespace) {
             $this->addNamespace($namespace, $phpNamespace);
@@ -65,22 +68,20 @@ class ServerFactory
         return new DiactorosFactory();
     }
 
+    public function setMetadataGenerator(PhpMetadataGeneratorInterface $generator)
+    {
+        $this->generator = $generator;
+    }
+
     private function getSoapService($wsdl, $portName = null, $serviceName = null)
     {
+        $generator = $this->generator ?: new PhpMetadataGenerator();
 
-        $generator = new PhpMetadataGenerator();
         foreach ($this->namespaces as $ns => $phpNs) {
             $generator->addNamespace($ns, $phpNs);
         }
 
-        $dispatcher = new EventDispatcher();
-        $wsdlReader = new DefinitionsReader(null, $dispatcher);
-
-        $soapReader = new SoapReader();
-        $dispatcher->addSubscriber($soapReader);
-        $wsdlReader->readFile($wsdl);
-
-        $services = $generator->generateServices($soapReader->getServices());
+        $services = $generator->generateServices($wsdl);
 
         if ($serviceName && isset($services[$serviceName])) {
             $service = $services[$serviceName];
@@ -109,9 +110,9 @@ class ServerFactory
     public function getServer($wsdl, $portName = null, $serviceName = null)
     {
         $this->messageFactory = $this->messageFactory ?: $this->buildMessageFactory();
-
+        $headerHandler = $this->headerHandler ?: new HeaderHandler();
         $service = $this->getSoapService($wsdl, $portName, $serviceName);
 
-        return new Server($service, $this->serializer, $this->messageFactory, $this->headerHandler);
+        return new Server($service, $this->serializer, $this->messageFactory, $headerHandler);
     }
 }

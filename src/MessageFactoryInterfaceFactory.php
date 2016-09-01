@@ -6,8 +6,8 @@ use Psr\Http\Message\ResponseInterface;
 interface MessageFactoryInterfaceFactory
 {
     /**
-     * @param $xml
+     * @param string $message
      * @return ResponseInterface
      */
-    public function getResponseMessage($xml);
+    public function getResponseMessage($message);
 }

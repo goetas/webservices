@@ -36,7 +36,7 @@ class Server
      */
     protected $serviceDefinition;
 
-    public function __construct($serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory, HeaderHandlerInterface $headerHandler)
+    public function __construct(array $serviceDefinition, Serializer $serializer, MessageFactoryInterfaceFactory $httpFactory, HeaderHandlerInterface $headerHandler)
     {
         $this->serializer = $serializer;
         $this->httpFactory = $httpFactory;
@@ -111,13 +111,13 @@ class Server
 
     /**
      * @param ServerRequestInterface $request
-     * @param array $service
+     * @param array $serviceDefinition
      * @return array
      */
-    private function findOperation(ServerRequestInterface $request, array $service)
+    private function findOperation(ServerRequestInterface $request, array $serviceDefinition)
     {
         $action = trim($request->getHeaderLine('Soap-Action'), '"');
-        foreach ($service['operations'] as $operation) {
+        foreach ($serviceDefinition['operations'] as $operation) {
             if ($operation['action'] === $action) {
                 return $operation;
             }

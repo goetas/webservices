@@ -36,7 +36,8 @@ abstract class AbstractServerTest extends \PHPUnit_Framework_TestCase
             'GoetasWebservices\SoapServices\SoapEnvelope' => '/home/goetas/projects/webservices/src/Resources/metadata/jms'
         ]);
 
-        $factory = new ServerFactory($namespaces, $serializer, $headerHandler);
+        $factory = new ServerFactory($namespaces, $serializer);
+        $factory->setHeaderHandler($headerHandler);
 
         self::$server = $factory->getServer(__DIR__ . '/../Fixtures/Soap/test.wsdl');
     }

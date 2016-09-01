@@ -2,7 +2,6 @@
 
 namespace GoetasWebservices\SoapServices\Tests;
 
-use GoetasWebservices\SoapServices\Serializer\Handler\HeaderHandler;
 use GoetasWebservices\SoapServices\ServerFactory;
 use GoetasWebservices\WsdlToPhp\Tests\Generator;
 
@@ -21,7 +20,7 @@ class BuildServerTest extends \PHPUnit_Framework_TestCase
         $generator = new Generator($namespaces);
         $serializer = $generator->buildSerializer();
 
-        $this->factory = new ServerFactory($namespaces, $serializer, new HeaderHandler());
+        $this->factory = new ServerFactory($namespaces, $serializer);
     }
 
     public function testBuildServer()
