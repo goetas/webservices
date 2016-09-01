@@ -76,9 +76,9 @@ class Server
             }
             $this->headerHandler->resetHeadersToUnderstand();
 
-            if (count($toUnderstand)){
+            if (count($toUnderstand)) {
                 throw new MustUnderstandException(
-                    "MustUnderstand headers:[".implode(', ', array_map([$this, 'getXmlNamesDescription'], $toUnderstand))."] are not understood"
+                    "MustUnderstand headers:[" . implode(', ', array_map([$this, 'getXmlNamesDescription'], $toUnderstand)) . "] are not understood"
                 );
             }
 
@@ -86,7 +86,7 @@ class Server
 
         } catch (\Exception $e) {
             $fault = new SoapEnvelope\Parts\Fault();
-            if (!$e instanceof SoapServerException){
+            if (!$e instanceof SoapServerException) {
                 $e = new ServerException($e->getMessage(), $e->getCode(), $e);
             }
             $fault->setException($e);
@@ -143,7 +143,7 @@ class Server
                     break;
                 }
                 $classMetadata = $factory->getMetadataForClass($nextClass);
-                if ($input === null && !$classMetadata->propertyMetadata){
+                if ($input === null && !$classMetadata->propertyMetadata) {
                     return $instantiator->instantiate($classMetadata->name);
                 } elseif (!$classMetadata->propertyMetadata) {
                     throw new \Exception("Can not determine how to associate the message");

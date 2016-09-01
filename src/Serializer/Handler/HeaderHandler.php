@@ -1,17 +1,15 @@
 <?php
 namespace GoetasWebservices\SoapServices\Serializer\Handler;
 
-use JMS\Serializer\Context;
 use JMS\Serializer\DeserializationContext;
 use JMS\Serializer\GraphNavigator;
 use JMS\Serializer\Handler\SubscribingHandlerInterface;
 use JMS\Serializer\XmlDeserializationVisitor;
-use JMS\Serializer\XmlSerializationVisitor;
-use RuntimeException;
 
 class HeaderHandler implements SubscribingHandlerInterface, HeaderHandlerInterface
 {
     protected $headersToUnderstand = [];
+
     public static function getSubscribingMethods()
     {
         return array(
@@ -31,7 +29,7 @@ class HeaderHandler implements SubscribingHandlerInterface, HeaderHandlerInterfa
         $return = $context->getNavigator()->accept($data, $type, $context);
 
         $mustUnderstandAttr = $data->attributes('http://schemas.xmlsoap.org/soap/envelope/')->mustUnderstand;
-        $mustUnderstand = $mustUnderstandAttr!==null && $visitor->visitBoolean($mustUnderstandAttr, [], $context);
+        $mustUnderstand = $mustUnderstandAttr !== null && $visitor->visitBoolean($mustUnderstandAttr, [], $context);
         if ($mustUnderstand) {
             $this->headersToUnderstand[spl_object_hash($return)] = $return;
         }

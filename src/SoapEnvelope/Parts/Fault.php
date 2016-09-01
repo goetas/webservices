@@ -20,6 +20,7 @@ class Fault
     {
         $this->exception = $exception;
     }
+
     /**
      * @return string
      */
@@ -34,7 +35,7 @@ class Fault
     public function getCode()
     {
         $ref = new \ReflectionObject($this->exception);
-        return 'SOAP-ENV:'.str_replace('Exception', '', $ref->getShortName()); //$this->exception->getCode();
+        return 'SOAP-ENV:' . str_replace('Exception', '', $ref->getShortName()); //$this->exception->getCode();
     }
 
     /**
