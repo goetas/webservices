@@ -25,7 +25,7 @@ abstract class AbstractServerTest extends \PHPUnit_Framework_TestCase
             'http://www.example.org/test/' => "Ex"
         ];
 
-        self::$generator = new Generator($namespaces, [], '/home/goetas/projects/webservices/tmp');
+        self::$generator = new Generator($namespaces);
 
         self::$generator->generate([__DIR__ . '/../Fixtures/Soap/test.wsdl']);
         self::$generator->registerAutoloader();
